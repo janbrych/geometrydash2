@@ -113,48 +113,54 @@ function initLevel() {
     // --- CUBE (10 Parts) ---
     for(let i=0; i<10; i++) {
         addSection(curX, [{ x: 0, y: 0, type: 'spike' }]);
-        if (i > 3) addSection(curX, [{ x: 200, y: 0, type: 'block' }]);
-        if (i > 6) addSection(curX, [{ x: 200, y: 50, type: 'spike' }]);
-        curX += 600;
+        if (i > 3) addSection(curX, [{ x: 300, y: 0, type: 'block' }]);
+        if (i > 6) addSection(curX, [{ x: 300, y: 50, type: 'spike' }]);
+        curX += 800;
     }
     transitions.push({ x: curX, mode: MODES.SHIP });
-    curX += 1000;
+    curX += 1200;
 
     // --- SHIP (10 Parts) ---
     for(let i=0; i<10; i++) {
-        let gap = 150 - (i * 5); // Getting tighter
+        let h1 = 100 + (i * 10);
+        let h2 = 100 + (i * 5);
         addSection(curX, [
-            { x: 0, y: 0, type: 'block', h: 100 + Math.random()*50 },
-            { x: 0, y: 400 - (100 + Math.random()*50), type: 'block', h: 100 }
+            { x: 0, y: 0, type: 'block', h: h1 },
+            { x: 0, y: 400 - h2, type: 'block', h: h2 }
         ]);
-        curX += 800;
+        curX += 1000;
     }
     transitions.push({ x: curX, mode: MODES.BALL });
-    curX += 1000;
+    curX += 1200;
 
     // --- BALL (10 Parts) ---
     for(let i=0; i<10; i++) {
         addSection(curX, [{ x: 0, y: i%2==0 ? 0 : 350, type: 'spike' }]);
-        if (i > 5) addSection(curX, [{ x: 200, y: i%2==0 ? 350 : 0, type: 'spike' }]);
-        curX += 700;
+        if (i > 5) addSection(curX, [{ x: 350, y: i%2==0 ? 350 : 0, type: 'spike' }]);
+        curX += 1000;
     }
     transitions.push({ x: curX, mode: MODES.UFO });
-    curX += 1000;
+    curX += 1200;
 
     // --- UFO (10 Parts) ---
     for(let i=0; i<10; i++) {
-        addSection(curX, [{ x: 0, y: 150 + Math.sin(i)*100, type: 'block', w: 100, h: 40 }]);
-        if (i % 3 == 0) addSection(curX, [{ x: 50, y: 150 + Math.sin(i)*100 + 40, type: 'spike' }]);
-        curX += 800;
+        let y = 150 + Math.sin(i * 0.8) * 80;
+        addSection(curX, [{ x: 0, y: y, type: 'block', w: 120, h: 30 }]);
+        if (i % 2 == 0) addSection(curX, [{ x: 300, y: y + 80, type: 'spike' }]);
+        curX += 1000;
     }
     transitions.push({ x: curX, mode: MODES.WAVE });
-    curX += 1000;
+    curX += 1200;
 
     // --- WAVE (10 Parts) ---
     for(let i=0; i<10; i++) {
-        let y = 100 + (i%2)*200;
-        addSection(curX, [{ x: 0, y: y, type: 'block', w: 400, h: 50 }]);
-        curX += 600;
+        let h = 120;
+        let y = 50 + (i%2) * 200;
+        addSection(curX, [
+            { x: 0, y: y, type: 'block', w: 400, h: 30 },
+            { x: 0, y: y + 150, type: 'block', w: 400, h: 30 }
+        ]);
+        curX += 900;
     }
 
     totalLevelLength = curX + 2000;
@@ -218,9 +224,9 @@ function update() {
             player.velocityY += GRAVITY;
             break;
         case MODES.SHIP:
-            if (jumpPressed) player.velocityY -= 0.6; else player.velocityY += 0.6;
-            player.velocityY = Math.max(-8, Math.min(8, player.velocityY));
-            player.rotation = player.velocityY * 0.05;
+            if (jumpPressed) player.velocityY -= 0.7; else player.velocityY += 0.7;
+            player.velocityY = Math.max(-9, Math.min(9, player.velocityY));
+            player.rotation = player.velocityY * 0.06;
             break;
         case MODES.BALL:
             if (jumpPressed && !jumpProcessed) { player.gravityDir *= -1; player.isGrounded = false; jumpProcessed = true; }
@@ -242,9 +248,15 @@ function update() {
     const ceilLevel = CEILING_HEIGHT;
 
     if (player.y + player.height > groundLevel) {
-        if (!player.isGrounded) createLandingEffect();
+        if (!player.isGrounded) {
+            createLandingEffect();
+            if (player.mode === MODES.CUBE) player.rotation = Math.round(player.rotation / (Math.PI / 2)) * (Math.PI / 2);
+        }
         player.y = groundLevel - player.height; player.velocityY = 0; player.isGrounded = true;
     } else if (player.y < ceilLevel) {
+        if (!player.isGrounded && player.mode === MODES.BALL && player.gravityDir === -1) {
+             createLandingEffect();
+        }
         player.y = ceilLevel; player.velocityY = 0;
         if (player.mode === MODES.BALL && player.gravityDir === -1) player.isGrounded = true;
     } else {
@@ -257,24 +269,50 @@ function update() {
     obstacles.forEach(obs => {
         const obsX = obs.x - gameDistance;
         const obsY = groundLevel - obs.y;
+
         if (obsX > player.x - 100 && obsX < player.x + 100) {
             if (obs.type === 'spike') {
                 const spikeTop = obsY - obs.h;
-                if (player.x + player.width > obsX + 10 && player.x < obsX + obs.w - 10 &&
-                    player.y + player.height > spikeTop && player.y < obsY) {
+                // Forgiving spike hitboxes (smaller than visual)
+                const margin = 14;
+                if (player.x + player.width > obsX + margin && player.x < obsX + obs.w - margin &&
+                    player.y + player.height > spikeTop + margin && player.y < obsY - 2) {
                     player.dead = true; createDeathEffect();
                 }
             } else if (obs.type === 'block') {
-                if (player.x + player.width > obsX && player.x < obsX + obs.w &&
-                    player.y + player.height > obsY - obs.h && player.y < obsY) {
-                    if (player.velocityY * player.gravityDir >= 0 &&
-                        ((player.gravityDir === 1 && player.y + player.height < obsY - obs.h + 20) ||
-                         (player.gravityDir === -1 && player.y > obsY - 20))) {
-                        player.y = player.gravityDir === 1 ? obsY - obs.h - player.height : obsY;
-                        player.velocityY = 0; player.isGrounded = true;
+                // Landing check (more generous horizontally, no margin)
+                if (player.x + player.width > obsX && player.x < obsX + obs.w) {
+                    // Top/Bottom collision
+                    if (player.gravityDir === 1) {
+                        if (player.y + player.height >= obsY - obs.h && player.y + player.height <= obsY - obs.h + 20 && player.velocityY >= 0) {
+                            if (!player.isGrounded) {
+                                createLandingEffect();
+                                if (player.mode === MODES.CUBE) player.rotation = Math.round(player.rotation / (Math.PI / 2)) * (Math.PI / 2);
+                            }
+                            player.y = obsY - obs.h - player.height;
+                            player.velocityY = 0;
+                            player.isGrounded = true;
+                            return;
+                        }
                     } else {
-                        player.dead = true; createDeathEffect();
+                        if (player.y <= obsY && player.y >= obsY - 20 && player.velocityY <= 0) {
+                            if (!player.isGrounded) {
+                                createLandingEffect();
+                            }
+                            player.y = obsY;
+                            player.velocityY = 0;
+                            player.isGrounded = true;
+                            return;
+                        }
                     }
+                }
+
+                // Side collision (hazard)
+                const sideMargin = 8;
+                if (player.x + player.width > obsX + sideMargin && player.x < obsX + obs.w - sideMargin &&
+                    player.y + player.height > obsY - obs.h + 5 && player.y < obsY - 5) {
+                    player.dead = true;
+                    createDeathEffect();
                 }
             }
         }
