@@ -50,7 +50,7 @@ class Particle {
         this.decay = 0.01 + Math.random() * 0.02;
     }
     update() {
-        this.x += this.vx;
+        this.x += this.vx - SPEED; // Move with world
         this.y += this.vy;
         this.vy += 0.2; // gravity
         this.vx *= 0.98;
@@ -205,8 +205,11 @@ function update() {
 
     // Trail
     player.trail.push({ x: player.x, y: player.y, rotation: player.rotation, life: 1.0 });
-    if (player.trail.length > 15) player.trail.shift();
-    player.trail.forEach(t => t.life -= 0.07);
+    if (player.trail.length > 8) player.trail.shift();
+    player.trail.forEach(t => {
+        t.x -= SPEED * 0.8; // Move slightly slower to stay closer
+        t.life -= 0.12;
+    });
 
     particles.forEach(p => p.update());
     particles = particles.filter(p => p.life > 0);
@@ -267,15 +270,22 @@ function draw() {
     });
 
     // Trail
-    player.trail.forEach(t => {
-        ctx.save();
-        ctx.globalAlpha = t.life * 0.3;
-        ctx.translate(t.x + player.width/2, t.y + player.height/2);
-        ctx.rotate(t.rotation);
-        ctx.fillStyle = player.color;
-        ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
-        ctx.restore();
-    });
+    ctx.save();
+    ctx.beginPath();
+    ctx.strokeStyle = player.color;
+    ctx.lineWidth = 20;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    for (let i = 0; i < player.trail.length; i++) {
+        const t = player.trail[i];
+        ctx.globalAlpha = t.life * 0.4;
+        const tx = t.x + player.width / 2;
+        const ty = t.y + player.height / 2;
+        if (i === 0) ctx.moveTo(tx, ty);
+        else ctx.lineTo(tx, ty);
+    }
+    ctx.stroke();
+    ctx.restore();
 
     particles.forEach(p => p.draw());
 
