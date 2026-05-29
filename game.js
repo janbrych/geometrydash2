@@ -12,6 +12,8 @@ resize();
 // Game constants
 const GRAVITY = 0.8;
 const JUMP_FORCE = -12;
+const COYOTE_TIME = 5; // Frames allowed to jump after leaving ledge
+const BUFFER_TIME = 5; // Frames jump input is remembered before landing
 const GROUND_HEIGHT = 100;
 const CEILING_HEIGHT = 100;
 const PLAYER_SIZE = 40;
@@ -29,6 +31,7 @@ const MODES = {
 // Game State
 let gameState = 'START'; // START, PLAYING, DEAD
 let attempts = 1;
+let botMode = false; // BOT for testing
 
 let player = {
     x: 150,
@@ -37,6 +40,8 @@ let player = {
     height: PLAYER_SIZE,
     velocityY: 0,
     isGrounded: true,
+    coyoteCounter: 0,
+    jumpBufferCounter: 0,
     rotation: 0,
     gravityDir: 1,
     color: '#00ffff',
@@ -128,28 +133,32 @@ function initLevel() {
 
     let curX = 1200;
 
-    // Part 1: Cube - Intro
+    // Part 1: Cube - Intro (Rhythmic Complexity)
     addSection(curX, [
         { x: 400, y: 0, type: 'spike' },
         { x: 800, y: 0, type: 'spike' },
         { x: 1200, y: 0, type: 'block', h: 50 },
-        { x: 1200, y: 50, type: 'spike' },
-        { x: 1600, y: 0, type: 'spike' },
-        { x: 1650, y: 0, type: 'spike' },
-        { x: 2000, y: 0, type: 'ring', h: 100 },
-        { x: 2300, y: 0, type: 'spike' },
-        { x: 2350, y: 0, type: 'spike' },
-        { x: 2400, y: 0, type: 'spike' }, // Triple spike!
+        { x: 1300, y: 0, type: 'block', h: 100 },
+        { x: 1400, y: 0, type: 'block', h: 150 }, // Staircase
+        { x: 1700, y: 0, type: 'spike' },
+        { x: 2000, y: 0, type: 'ring', h: 120 },
+        { x: 2200, y: 150, type: 'block', w: 100, h: 20 },
+        { x: 2500, y: 0, type: 'spike' },
+        { x: 2550, y: 0, type: 'spike' },
+        { x: 2600, y: 0, type: 'spike' }, // Triple spike!
     ]);
     curX += 3000;
 
     // Part 2: Cube - Verticality
     addSection(curX, [
         { x: 200, y: 0, type: 'pad' },
-        { x: 500, y: 150, type: 'block', w: 100, h: 50 },
-        { x: 800, y: 150, type: 'ring', h: 80 },
-        { x: 1100, y: 250, type: 'block', w: 100, h: 50 },
-        { x: 1400, y: 0, type: 'spike' },
+        { x: 450, y: 150, type: 'block', w: 100, h: 30 },
+        { x: 450, y: 180, type: 'spike' }, // Spike on block
+        { x: 750, y: 150, type: 'ring', h: 60 },
+        { x: 1000, y: 250, type: 'block', w: 100, h: 30 },
+        { x: 1250, y: 250, type: 'ring', h: 60 },
+        { x: 1500, y: 350, type: 'block', w: 100, h: 30 },
+        { x: 1800, y: 0, type: 'spike' },
     ]);
     curX += 2000;
     transitions.push({ x: curX, mode: MODES.SHIP });
@@ -179,13 +188,15 @@ function initLevel() {
     transitions.push({ x: curX, mode: MODES.UFO });
     curX += 1500;
 
-    // Part 5: UFO - The Bounce
+    // Part 5: UFO - The Bounce (Vertical Complexity)
     for(let i=0; i<10; i++) {
         addSection(curX + i*900, [
             { x: 0, y: 180, type: 'block', w: 100, h: 20 },
+            { x: 150, y: 300, type: 'spike' }, // Floating spike
             { x: 300, y: 0, type: 'spike' },
             { x: 600, y: 350, type: 'spike' },
-            { x: 450, y: 150, type: 'ring', h: 40 }
+            { x: 450, y: 150, type: 'ring', h: 40 },
+            { x: 750, y: 200, type: 'ring', h: 40 } // Chain
         ]);
     }
     curX += 9500;
@@ -262,7 +273,54 @@ function createDeathEffect() {
     }
 }
 
+function runBot() {
+    if (!botMode) return;
+
+    const futureX = 80; // How far to look ahead
+    const scanX = player.x + futureX;
+
+    let danger = false;
+    obstacles.forEach(obs => {
+        const obsX = obs.x - gameDistance;
+        const obsY = canvas.height - GROUND_HEIGHT - obs.y;
+
+        if (obsX > player.x && obsX < player.x + 200) {
+            // Very simple jump logic
+            if (obs.type === 'spike' || obs.type === 'block') {
+                if (obsX < player.x + 100) danger = true;
+            }
+            if (obs.type === 'ring') {
+                 if (obsX < player.x + 50 && player.y > obsY) danger = true;
+            }
+        }
+    });
+
+    if (player.mode === MODES.CUBE || player.mode === MODES.UFO || player.mode === MODES.BALL) {
+        if (danger) jumpPressed = true;
+        else if (player.mode !== MODES.BALL) jumpPressed = false;
+
+        if (player.mode === MODES.BALL && !danger) jumpPressed = false;
+    } else if (player.mode === MODES.SHIP) {
+        // Simple hover
+        const targetY = 250;
+        if (player.y > targetY + 20) jumpPressed = true;
+        else if (player.y < targetY - 20) jumpPressed = false;
+
+        if (danger) jumpPressed = !jumpPressed;
+    } else if (player.mode === MODES.WAVE) {
+        const targetY = 250;
+        if (player.y > targetY) jumpPressed = true;
+        else jumpPressed = false;
+    }
+}
+
 function update() {
+    if (botMode) runBot();
+
+    // Jump Buffering
+    if (jumpPressed) player.jumpBufferCounter = BUFFER_TIME;
+    else if (player.jumpBufferCounter > 0) player.jumpBufferCounter--;
+
     if (screenShake > 0) screenShake *= 0.9;
     if (deathFlash > 0) deathFlash -= 0.05;
     if (transitionFlash > 0) transitionFlash -= 0.05;
@@ -290,7 +348,12 @@ function update() {
     // Physics
     switch(player.mode) {
         case MODES.CUBE:
-            if (jumpPressed && player.isGrounded) { player.velocityY = JUMP_FORCE; player.isGrounded = false; }
+            if (player.jumpBufferCounter > 0 && (player.isGrounded || player.coyoteCounter > 0)) {
+                player.velocityY = JUMP_FORCE;
+                player.isGrounded = false;
+                player.coyoteCounter = 0;
+                player.jumpBufferCounter = 0;
+            }
             player.velocityY += GRAVITY;
             break;
         case MODES.SHIP:
@@ -322,13 +385,19 @@ function update() {
             createLandingEffect();
             if (player.mode === MODES.CUBE) player.rotation = Math.round(player.rotation / (Math.PI / 2)) * (Math.PI / 2);
         }
-        player.y = groundLevel - player.height; player.velocityY = 0; player.isGrounded = true;
+        player.y = groundLevel - player.height; player.velocityY = 0;
+        player.isGrounded = true;
+        player.coyoteCounter = COYOTE_TIME;
     } else if (player.y < ceilLevel) {
         if (!player.isGrounded && player.mode === MODES.BALL && player.gravityDir === -1) createLandingEffect();
         player.y = ceilLevel; player.velocityY = 0;
-        if (player.mode === MODES.BALL && player.gravityDir === -1) player.isGrounded = true;
+        if (player.mode === MODES.BALL && player.gravityDir === -1) {
+            player.isGrounded = true;
+            player.coyoteCounter = COYOTE_TIME;
+        }
     } else {
         player.isGrounded = false;
+        if (player.coyoteCounter > 0) player.coyoteCounter--;
     }
 
     if (player.mode === MODES.CUBE && !player.isGrounded) player.rotation += ROTATION_SPEED;
