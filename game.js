@@ -28,6 +28,11 @@ const MODES = {
     WAVE: 'wave'
 };
 
+// Audio setup
+const bgMusic = new Audio('techno.wav');
+bgMusic.loop = true;
+bgMusic.volume = 0.6;
+
 // Game State
 let gameState = 'START'; // START, PLAYING, DEAD
 let attempts = 1;
@@ -66,6 +71,8 @@ window.addEventListener('keydown', (e) => {
     if (e.code === 'Space' || e.code === 'ArrowUp') {
         if (gameState === 'START') startGame();
         jumpPressed = true;
+    } else if (e.code === 'KeyB') {
+        botMode = !botMode;
     }
 });
 window.addEventListener('keyup', (e) => {
@@ -133,106 +140,113 @@ function initLevel() {
 
     let curX = 1200;
 
-    // Part 1: Cube - Intro (Rhythmic Complexity)
+    // Part 1: Cube - Rhythmic Intro
     addSection(curX, [
-        { x: 400, y: 0, type: 'spike' },
+        { x: 300, y: 0, type: 'spike' },
         { x: 800, y: 0, type: 'spike' },
-        { x: 1200, y: 0, type: 'block', h: 50 },
-        { x: 1300, y: 0, type: 'block', h: 100 },
-        { x: 1400, y: 0, type: 'block', h: 150 }, // Staircase
-        { x: 1700, y: 0, type: 'spike' },
-        { x: 2000, y: 0, type: 'ring', h: 120 },
-        { x: 2200, y: 150, type: 'block', w: 100, h: 20 },
-        { x: 2500, y: 0, type: 'spike' },
-        { x: 2550, y: 0, type: 'spike' },
-        { x: 2600, y: 0, type: 'spike' }, // Triple spike!
-    ]);
-    curX += 3000;
-
-    // Part 2: Cube - Verticality
-    addSection(curX, [
-        { x: 200, y: 0, type: 'pad' },
-        { x: 450, y: 150, type: 'block', w: 100, h: 30 },
-        { x: 450, y: 180, type: 'spike' }, // Spike on block
-        { x: 750, y: 150, type: 'ring', h: 60 },
-        { x: 1000, y: 250, type: 'block', w: 100, h: 30 },
-        { x: 1250, y: 250, type: 'ring', h: 60 },
-        { x: 1500, y: 350, type: 'block', w: 100, h: 30 },
+        { x: 1300, y: 0, type: 'block', h: 30, w: 100 },
+        { x: 1400, y: 0, type: 'block', h: 60, w: 100 },
         { x: 1800, y: 0, type: 'spike' },
+        { x: 2200, y: 0, type: 'ring', h: 100 },
+        { x: 2400, y: 100, type: 'block', w: 120, h: 20 },
+        { x: 2900, y: 0, type: 'spike' },
+        { x: 3300, y: 0, type: 'spike' },
     ]);
-    curX += 2000;
-    transitions.push({ x: curX, mode: MODES.SHIP });
-    curX += 1500;
+    curX += 3800;
 
-    // Part 3: Ship - The Cave
-    for(let i=0; i<10; i++) {
-        let yBase = Math.sin(i * 0.8) * 100 + 150;
-        addSection(curX + i*800, [
-            { x: 0, y: 0, type: 'block', h: yBase - 60 },
-            { x: 0, y: yBase + 100, type: 'block', h: 300 - yBase },
-            { x: 400, y: yBase + 20, type: 'spike' }
+    // Part 2: Cube - Pads & Orbs Verticality
+    addSection(curX, [
+        { x: 300, y: 0, type: 'pad' },
+        { x: 700, y: 140, type: 'block', w: 120, h: 20 },
+        { x: 1000, y: 140, type: 'ring', h: 50 },
+        { x: 1300, y: 220, type: 'block', w: 120, h: 20 },
+        { x: 1600, y: 220, type: 'ring', h: 50 },
+        { x: 1900, y: 300, type: 'block', w: 120, h: 20 },
+        { x: 2300, y: 0, type: 'spike' },
+    ]);
+    curX += 2900;
+
+    // Transition to Ship
+    transitions.push({ x: curX, mode: MODES.SHIP });
+    curX += 1000;
+
+    // Part 3: Ship - Smooth Cavern
+    for (let i = 0; i < 10; i++) {
+        let yCenter = 300 + Math.sin(i * 0.6) * 100;
+        addSection(curX + i * 850, [
+            { x: 0, y: 0, type: 'block', w: 150, h: Math.max(0, yCenter - 140) },
+            { x: 0, y: yCenter + 140, type: 'block', w: 150, h: Math.max(0, 600 - (yCenter + 140)) },
+            { x: 450, y: yCenter - 140, type: 'spike' }
         ]);
     }
-    curX += 9000;
+    curX += 8800;
+
+    // Transition to Ball
     transitions.push({ x: curX, mode: MODES.BALL });
-    curX += 1500;
+    curX += 1000;
 
     // Part 4: Ball - Gravity Corridors
-    for(let i=0; i<10; i++) {
-        addSection(curX + i*800, [
-            { x: 0, y: i%2==0 ? 0 : 350, type: 'spike' },
-            { x: 400, y: i%2==0 ? 350 : 0, type: 'block', h: 50 }
+    for (let i = 0; i < 8; i++) {
+        let isFloor = (i % 2 === 0);
+        addSection(curX + i * 1100, [
+            { x: 300, y: isFloor ? 0 : 550, type: 'spike' },
+            { x: 800, y: isFloor ? 550 : 0, type: 'block', w: 150, h: 50 }
         ]);
     }
-    curX += 8500;
+    curX += 9200;
+
+    // Transition to UFO
     transitions.push({ x: curX, mode: MODES.UFO });
-    curX += 1500;
+    curX += 1000;
 
-    // Part 5: UFO - The Bounce (Vertical Complexity)
-    for(let i=0; i<10; i++) {
-        addSection(curX + i*900, [
-            { x: 0, y: 180, type: 'block', w: 100, h: 20 },
-            { x: 150, y: 300, type: 'spike' }, // Floating spike
-            { x: 300, y: 0, type: 'spike' },
-            { x: 600, y: 350, type: 'spike' },
-            { x: 450, y: 150, type: 'ring', h: 40 },
-            { x: 750, y: 200, type: 'ring', h: 40 } // Chain
+    // Part 5: UFO - Rhythmic Bounces
+    for (let i = 0; i < 8; i++) {
+        addSection(curX + i * 900, [
+            { x: 0, y: 0, type: 'spike' },
+            { x: 300, y: 150, type: 'block', w: 120, h: 20 },
+            { x: 600, y: 0, type: 'spike' },
+            { x: 600, y: 550, type: 'spike' },
+            { x: 750, y: 250, type: 'ring', h: 40 }
         ]);
     }
-    curX += 9500;
+    curX += 7600;
+
+    // Transition to Wave
     transitions.push({ x: curX, mode: MODES.WAVE });
-    curX += 1500;
+    curX += 1000;
 
-    // Part 6: Wave - The Narrow Slalom
-    for(let i=0; i<12; i++) {
-        addSection(curX + i*700, [
-            { x: 0, y: i%2==0 ? 0 : 250, type: 'block', w: 400, h: 150 },
-            { x: 350, y: i%2==0 ? 350 : 0, type: 'spike' }
+    // Part 6: Wave - Open Slalom
+    for (let i = 0; i < 10; i++) {
+        let isTop = (i % 2 === 0);
+        addSection(curX + i * 850, [
+            { x: 0, y: isTop ? 320 : 0, type: 'block', w: 250, h: 180 },
+            { x: 500, y: isTop ? 0 : 550, type: 'spike' }
         ]);
     }
-    curX += 9000;
+    curX += 8800;
 
-    // Part 7: Final Sprint - Mixed Cube
+    // Transition back to Cube - Final Sprint
     transitions.push({ x: curX, mode: MODES.CUBE });
     curX += 1000;
     addSection(curX, [
-        { x: 200, y: 0, type: 'pad' },
-        { x: 500, y: 0, type: 'pad' },
+        { x: 300, y: 0, type: 'pad' },
         { x: 800, y: 0, type: 'pad' },
-        { x: 1100, y: 250, type: 'ring', h: 40 },
-        { x: 1300, y: 250, type: 'ring', h: 40 },
-        { x: 1500, y: 250, type: 'ring', h: 40 },
-        { x: 1800, y: 0, type: 'spike' },
-        { x: 1850, y: 0, type: 'spike' },
-        { x: 1900, y: 0, type: 'spike' },
+        { x: 1300, y: 0, type: 'pad' },
+        { x: 1700, y: 200, type: 'ring', h: 40 },
+        { x: 2100, y: 200, type: 'ring', h: 40 },
+        { x: 2500, y: 0, type: 'spike' },
+        { x: 2900, y: 0, type: 'spike' },
     ]);
-    curX += 3000;
+    curX += 3400;
 
-    totalLevelLength = curX + 2000;
+    totalLevelLength = curX + 1000;
 }
 
 function startGame() {
     gameState = 'PLAYING';
+    if (bgMusic.paused) {
+        bgMusic.play().catch(() => {});
+    }
     resetGame(false);
 }
 
@@ -276,41 +290,106 @@ function createDeathEffect() {
 function runBot() {
     if (!botMode) return;
 
-    const futureX = 80; // How far to look ahead
-    const scanX = player.x + futureX;
+    const groundLevel = canvas.height - GROUND_HEIGHT;
 
-    let danger = false;
-    obstacles.forEach(obs => {
-        const obsX = obs.x - gameDistance;
-        const obsY = canvas.height - GROUND_HEIGHT - obs.y;
+    // Fast predictive trajectory lookahead for in-game bot solver
+    function checkSafety(doJump, frames = 10) {
+        let simY = player.y;
+        let simVy = player.velocityY;
+        let simGrounded = player.isGrounded;
+        let simGravityDir = player.gravityDir;
+        let simCoyote = player.coyoteCounter;
+        let simJumpBuffer = doJump ? BUFFER_TIME : 0;
+        let simJumpProcessed = jumpProcessed;
 
-        if (obsX > player.x && obsX < player.x + 200) {
-            // Very simple jump logic
-            if (obs.type === 'spike' || obs.type === 'block') {
-                if (obsX < player.x + 100) danger = true;
+        for (let f = 0; f < frames; f++) {
+            let simX = player.x;
+            let currentDist = gameDistance + (f + 1) * SPEED;
+
+            // Physics step simulation
+            switch(player.mode) {
+                case MODES.CUBE:
+                    if (simJumpBuffer > 0 && (simGrounded || simCoyote > 0)) {
+                        simVy = JUMP_FORCE;
+                        simGrounded = false;
+                        simCoyote = 0;
+                        simJumpBuffer = 0;
+                    }
+                    simVy += GRAVITY;
+                    break;
+                case MODES.SHIP:
+                    if (doJump) simVy -= 0.75; else simVy += 0.75;
+                    simVy = Math.max(-9, Math.min(9, simVy));
+                    break;
+                case MODES.BALL:
+                    if (doJump && !simJumpProcessed) { simGravityDir *= -1; simGrounded = false; simJumpProcessed = true; }
+                    simVy += GRAVITY * simGravityDir;
+                    break;
+                case MODES.UFO:
+                    if (doJump && !simJumpProcessed) { simVy = JUMP_FORCE * 0.75; simJumpProcessed = true; }
+                    simVy += GRAVITY;
+                    break;
+                case MODES.WAVE:
+                    if (doJump) simVy = -SPEED * 1.3; else simVy = SPEED * 1.3;
+                    break;
             }
-            if (obs.type === 'ring') {
-                 if (obsX < player.x + 50 && player.y > obsY) danger = true;
+
+            simY += simVy;
+
+            if (simY + player.height > groundLevel) {
+                simY = groundLevel - player.height; simVy = 0; simGrounded = true; simCoyote = COYOTE_TIME;
+            } else if (simY < CEILING_HEIGHT) {
+                simY = CEILING_HEIGHT; simVy = 0;
+                if (player.mode === MODES.BALL && simGravityDir === -1) { simGrounded = true; simCoyote = COYOTE_TIME; }
+            } else {
+                simGrounded = false;
+                if (simCoyote > 0) simCoyote--;
+            }
+
+            // Collision test
+            for (let i = 0; i < obstacles.length; i++) {
+                const obs = obstacles[i];
+                const obsX = obs.x - currentDist;
+                const obsY = groundLevel - obs.y;
+
+                if (obsX > -player.width && obsX < simX + player.width + 50) {
+                    if (obs.type === 'spike') {
+                        const margin = 14;
+                        if (simX + player.width > obsX + margin && simX < obsX + obs.w - margin &&
+                            simY + player.height > obsY - obs.h + margin && simY < obsY - 2) {
+                            return false;
+                        }
+                    } else if (obs.type === 'block') {
+                        const sideMargin = 8;
+                        if (simX + player.width > obsX + sideMargin && simX < obsX + obs.w - sideMargin &&
+                            simY + player.height > obsY - obs.h + 5 && simY < obsY - 5) {
+                            return false;
+                        }
+                    }
+                }
             }
         }
-    });
+        return true;
+    }
 
-    if (player.mode === MODES.CUBE || player.mode === MODES.UFO || player.mode === MODES.BALL) {
-        if (danger) jumpPressed = true;
-        else if (player.mode !== MODES.BALL) jumpPressed = false;
+    let safeNoJump = checkSafety(false, 12);
+    let safeJump = checkSafety(true, 12);
 
-        if (player.mode === MODES.BALL && !danger) jumpPressed = false;
-    } else if (player.mode === MODES.SHIP) {
-        // Simple hover
-        const targetY = 250;
-        if (player.y > targetY + 20) jumpPressed = true;
-        else if (player.y < targetY - 20) jumpPressed = false;
-
-        if (danger) jumpPressed = !jumpPressed;
-    } else if (player.mode === MODES.WAVE) {
-        const targetY = 250;
-        if (player.y > targetY) jumpPressed = true;
-        else jumpPressed = false;
+    if (safeJump && !safeNoJump) {
+        jumpPressed = true;
+    } else if (safeNoJump && !safeJump) {
+        jumpPressed = false;
+    } else {
+        // Mode specific preference when both safe
+        if (player.mode === MODES.SHIP || player.mode === MODES.WAVE) {
+            // Target open mid-screen area
+            let targetY = (groundLevel + CEILING_HEIGHT) / 2 - player.height / 2;
+            jumpPressed = (player.y > targetY);
+        } else if (player.mode === MODES.CUBE) {
+            jumpPressed = false;
+        } else {
+            jumpPressed = false;
+        }
     }
 }
 
