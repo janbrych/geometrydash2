@@ -28,13 +28,47 @@ const MODES = {
     WAVE: 'wave'
 };
 
+// Level Configurations & Themes
+const LEVEL_CONFIGS = [
+    {
+        id: 0,
+        title: 'CYBER RAVE',
+        audioSrc: 'techno_level1.wav',
+        playerColor: '#00ffff',
+        bgHueOffset: 180,
+        initialMode: MODES.CUBE,
+        builder: buildLevel1
+    },
+    {
+        id: 1,
+        title: 'ACID DISTRICT',
+        audioSrc: 'techno_level2.wav',
+        playerColor: '#aaff00',
+        bgHueOffset: 80,
+        initialMode: MODES.BALL,
+        builder: buildLevel2
+    },
+    {
+        id: 2,
+        title: 'INDUSTRIAL HELL',
+        audioSrc: 'techno_level3.wav',
+        playerColor: '#ff2255',
+        bgHueOffset: 340,
+        initialMode: MODES.WAVE,
+        builder: buildLevel3
+    }
+];
+
+let currentLevelIdx = 0;
+let levelBestScores = [0, 0, 0];
+
 // Audio setup
-const bgMusic = new Audio('techno.wav');
+let bgMusic = new Audio(LEVEL_CONFIGS[0].audioSrc);
 bgMusic.loop = true;
 bgMusic.volume = 0.6;
 
 // Game State
-let gameState = 'START'; // START, PLAYING, DEAD
+let gameState = 'LOBBY'; // LOBBY, START, PLAYING, DEAD
 let attempts = 1;
 let botMode = false; // BOT for testing
 
@@ -73,6 +107,8 @@ window.addEventListener('keydown', (e) => {
         jumpPressed = true;
     } else if (e.code === 'KeyB') {
         botMode = !botMode;
+    } else if (e.code === 'Escape') {
+        returnToLobby();
     }
 });
 window.addEventListener('keyup', (e) => {
@@ -131,16 +167,9 @@ function addSection(startX, obstaclesList) {
     });
 }
 
-function initLevel() {
-    obstacles = [];
-    transitions = [];
-    gameDistance = 0;
-    player.mode = MODES.CUBE;
-    player.gravityDir = 1;
-
+// LEVEL 1 BUILDER
+function buildLevel1() {
     let curX = 1200;
-
-    // Part 1: Cube - Rhythmic Intro
     addSection(curX, [
         { x: 300, y: 0, type: 'spike' },
         { x: 800, y: 0, type: 'spike' },
@@ -154,7 +183,6 @@ function initLevel() {
     ]);
     curX += 3800;
 
-    // Part 2: Cube - Pads & Orbs Verticality
     addSection(curX, [
         { x: 300, y: 0, type: 'pad' },
         { x: 700, y: 140, type: 'block', w: 120, h: 20 },
@@ -166,12 +194,10 @@ function initLevel() {
     ]);
     curX += 2900;
 
-    // Transition to Ship
     transitions.push({ x: curX, mode: MODES.SHIP });
     curX += 1000;
 
-    // Part 3: Ship - Smooth Cavern
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 8; i++) {
         let yCenter = 300 + Math.sin(i * 0.6) * 100;
         addSection(curX + i * 850, [
             { x: 0, y: 0, type: 'block', w: 150, h: Math.max(0, yCenter - 140) },
@@ -179,28 +205,24 @@ function initLevel() {
             { x: 450, y: yCenter - 140, type: 'spike' }
         ]);
     }
-    curX += 8800;
+    curX += 7100;
 
-    // Transition to Ball
     transitions.push({ x: curX, mode: MODES.BALL });
     curX += 1000;
 
-    // Part 4: Ball - Gravity Corridors
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 6; i++) {
         let isFloor = (i % 2 === 0);
         addSection(curX + i * 1100, [
             { x: 300, y: isFloor ? 0 : 550, type: 'spike' },
             { x: 800, y: isFloor ? 550 : 0, type: 'block', w: 150, h: 50 }
         ]);
     }
-    curX += 9200;
+    curX += 7000;
 
-    // Transition to UFO
     transitions.push({ x: curX, mode: MODES.UFO });
     curX += 1000;
 
-    // Part 5: UFO - Rhythmic Bounces
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 6; i++) {
         addSection(curX + i * 900, [
             { x: 0, y: 0, type: 'spike' },
             { x: 300, y: 150, type: 'block', w: 120, h: 20 },
@@ -209,23 +231,20 @@ function initLevel() {
             { x: 750, y: 250, type: 'ring', h: 40 }
         ]);
     }
-    curX += 7600;
+    curX += 5800;
 
-    // Transition to Wave
     transitions.push({ x: curX, mode: MODES.WAVE });
     curX += 1000;
 
-    // Part 6: Wave - Open Slalom
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 8; i++) {
         let isTop = (i % 2 === 0);
         addSection(curX + i * 850, [
             { x: 0, y: isTop ? 320 : 0, type: 'block', w: 250, h: 180 },
             { x: 500, y: isTop ? 0 : 550, type: 'spike' }
         ]);
     }
-    curX += 8800;
+    curX += 7100;
 
-    // Transition back to Cube - Final Sprint
     transitions.push({ x: curX, mode: MODES.CUBE });
     curX += 1000;
     addSection(curX, [
@@ -238,8 +257,185 @@ function initLevel() {
         { x: 2900, y: 0, type: 'spike' },
     ]);
     curX += 3400;
-
     totalLevelLength = curX + 1000;
+}
+
+// LEVEL 2 BUILDER
+function buildLevel2() {
+    let curX = 1200;
+
+    for (let i = 0; i < 6; i++) {
+        let isFloor = (i % 2 === 0);
+        addSection(curX + i * 1100, [
+            { x: 300, y: isFloor ? 0 : 550, type: 'spike' },
+            { x: 800, y: isFloor ? 550 : 0, type: 'block', w: 150, h: 50 }
+        ]);
+    }
+    curX += 7000;
+
+    transitions.push({ x: curX, mode: MODES.CUBE });
+    curX += 1000;
+
+    addSection(curX, [
+        { x: 300, y: 0, type: 'pad' },
+        { x: 700, y: 140, type: 'block', w: 120, h: 20 },
+        { x: 1000, y: 140, type: 'ring', h: 50 },
+        { x: 1300, y: 220, type: 'block', w: 120, h: 20 },
+        { x: 1700, y: 0, type: 'spike' },
+        { x: 2100, y: 0, type: 'spike' },
+    ]);
+    curX += 2600;
+
+    transitions.push({ x: curX, mode: MODES.WAVE });
+    curX += 1000;
+
+    for (let i = 0; i < 8; i++) {
+        let isTop = (i % 2 === 0);
+        addSection(curX + i * 850, [
+            { x: 0, y: isTop ? 320 : 0, type: 'block', w: 250, h: 180 },
+            { x: 500, y: isTop ? 0 : 550, type: 'spike' }
+        ]);
+    }
+    curX += 7100;
+
+    transitions.push({ x: curX, mode: MODES.SHIP });
+    curX += 1000;
+
+    for (let i = 0; i < 8; i++) {
+        let yCenter = 300 + Math.cos(i * 0.6) * 100;
+        addSection(curX + i * 850, [
+            { x: 0, y: 0, type: 'block', w: 150, h: Math.max(0, yCenter - 140) },
+            { x: 0, y: yCenter + 140, type: 'block', w: 150, h: Math.max(0, 600 - (yCenter + 140)) },
+            { x: 450, y: yCenter - 140, type: 'spike' }
+        ]);
+    }
+    curX += 7100;
+
+    transitions.push({ x: curX, mode: MODES.UFO });
+    curX += 1000;
+
+    for (let i = 0; i < 6; i++) {
+        addSection(curX + i * 900, [
+            { x: 0, y: 0, type: 'spike' },
+            { x: 300, y: 150, type: 'block', w: 120, h: 20 },
+            { x: 600, y: 0, type: 'spike' },
+            { x: 750, y: 250, type: 'ring', h: 40 }
+        ]);
+    }
+    curX += 5800;
+
+    transitions.push({ x: curX, mode: MODES.CUBE });
+    curX += 1000;
+
+    addSection(curX, [
+        { x: 300, y: 0, type: 'pad' },
+        { x: 800, y: 0, type: 'spike' },
+        { x: 1300, y: 0, type: 'spike' },
+    ]);
+    curX += 2000;
+    totalLevelLength = curX + 1000;
+}
+
+// LEVEL 3 BUILDER
+function buildLevel3() {
+    let curX = 1200;
+
+    for (let i = 0; i < 8; i++) {
+        let isTop = (i % 2 === 0);
+        addSection(curX + i * 850, [
+            { x: 0, y: isTop ? 320 : 0, type: 'block', w: 250, h: 180 },
+            { x: 500, y: isTop ? 0 : 550, type: 'spike' }
+        ]);
+    }
+    curX += 7100;
+
+    transitions.push({ x: curX, mode: MODES.UFO });
+    curX += 1000;
+
+    for (let i = 0; i < 6; i++) {
+        addSection(curX + i * 900, [
+            { x: 0, y: 0, type: 'spike' },
+            { x: 300, y: 150, type: 'block', w: 120, h: 20 },
+            { x: 600, y: 0, type: 'spike' },
+            { x: 750, y: 250, type: 'ring', h: 40 }
+        ]);
+    }
+    curX += 5800;
+
+    transitions.push({ x: curX, mode: MODES.SHIP });
+    curX += 1000;
+
+    for (let i = 0; i < 8; i++) {
+        let yCenter = 300 + Math.sin(i * 0.6) * 100;
+        addSection(curX + i * 850, [
+            { x: 0, y: 0, type: 'block', w: 150, h: Math.max(0, yCenter - 140) },
+            { x: 0, y: yCenter + 140, type: 'block', w: 150, h: Math.max(0, 600 - (yCenter + 140)) },
+            { x: 450, y: yCenter - 140, type: 'spike' }
+        ]);
+    }
+    curX += 7100;
+
+    transitions.push({ x: curX, mode: MODES.BALL });
+    curX += 1000;
+
+    for (let i = 0; i < 6; i++) {
+        let isFloor = (i % 2 === 0);
+        addSection(curX + i * 1100, [
+            { x: 300, y: isFloor ? 0 : 550, type: 'spike' },
+            { x: 800, y: isFloor ? 550 : 0, type: 'block', w: 150, h: 50 }
+        ]);
+    }
+    curX += 7000;
+
+    transitions.push({ x: curX, mode: MODES.CUBE });
+    curX += 1000;
+
+    addSection(curX, [
+        { x: 300, y: 0, type: 'pad' },
+        { x: 800, y: 0, type: 'pad' },
+        { x: 1300, y: 0, type: 'spike' },
+        { x: 1700, y: 0, type: 'spike' },
+    ]);
+    curX += 2400;
+    totalLevelLength = curX + 1000;
+}
+
+function initLevel() {
+    obstacles = [];
+    transitions = [];
+    gameDistance = 0;
+    const config = LEVEL_CONFIGS[currentLevelIdx];
+
+    player.mode = config.initialMode;
+    player.color = config.playerColor;
+    player.gravityDir = 1;
+
+    config.builder();
+}
+
+function selectLevel(idx) {
+    currentLevelIdx = idx;
+    const config = LEVEL_CONFIGS[currentLevelIdx];
+
+    // Change soundtrack
+    bgMusic.pause();
+    bgMusic = new Audio(config.audioSrc);
+    bgMusic.loop = true;
+    bgMusic.volume = 0.6;
+
+    // Hide lobby overlay
+    document.getElementById('lobby').style.display = 'none';
+    document.getElementById('btnExitLobby').style.display = 'block';
+
+    attempts = 1;
+    startGame();
+}
+
+function returnToLobby() {
+    gameState = 'LOBBY';
+    bgMusic.pause();
+    document.getElementById('lobby').style.display = 'flex';
+    document.getElementById('btnExitLobby').style.display = 'none';
 }
 
 function startGame() {
@@ -279,6 +475,15 @@ function createDeathEffect() {
     screenShake = 30;
     deathFlash = 1.0;
     gameState = 'DEAD';
+
+    // Update personal best score
+    let pct = Math.floor((gameDistance / totalLevelLength) * 100);
+    if (pct > levelBestScores[currentLevelIdx]) {
+        levelBestScores[currentLevelIdx] = pct;
+        document.getElementById(`progress-${currentLevelIdx}`).style.width = `${pct}%`;
+        document.getElementById(`best-${currentLevelIdx}`).innerText = `Best: ${pct}%`;
+    }
+
     for (let i = 0; i < 50; i++) {
         particles.push(new Particle(
             player.x + player.width / 2, player.y + player.height / 2, player.color,
@@ -541,14 +746,20 @@ function update() {
 
     particles.forEach(p => p.update());
     particles = particles.filter(p => p.life > 0);
-    if (gameDistance > totalLevelLength) { gameState = 'START'; attempts = 1; resetGame(false); }
+    if (gameDistance > totalLevelLength) {
+        levelBestScores[currentLevelIdx] = 100;
+        document.getElementById(`progress-${currentLevelIdx}`).style.width = `100%`;
+        document.getElementById(`best-${currentLevelIdx}`).innerText = `Best: 100%`;
+        returnToLobby();
+    }
 }
 
 function draw() {
     ctx.save();
     if (screenShake > 1) ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
 
-    const hue = (gameDistance / 150) % 360;
+    const config = LEVEL_CONFIGS[currentLevelIdx];
+    const hue = (config.bgHueOffset + (gameDistance / 150)) % 360;
     ctx.fillStyle = `hsl(${hue}, 40%, 6%)`;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 

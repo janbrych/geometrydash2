@@ -2,14 +2,178 @@ body, html {
     margin: 0;
     padding: 0;
     overflow: hidden;
-    background-color: #000;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    background-color: #050508;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     height: 100vh;
+    user-select: none;
 }
 
 canvas {
     display: block;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    width: 100vw;
+    height: 100vh;
+}
+
+/* Lobby Overlay */
+.lobby-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle at center, rgba(10, 15, 30, 0.95), rgba(0, 0, 0, 0.98));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    transition: opacity 0.3s ease;
+}
+
+.lobby-title {
+    font-size: 56px;
+    font-weight: 900;
+    letter-spacing: 6px;
+    color: #00ffff;
+    text-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff;
+    margin: 0 0 5px 0;
+}
+
+.lobby-subtitle {
+    font-size: 18px;
+    letter-spacing: 4px;
+    color: #8888aa;
+    margin-bottom: 40px;
+}
+
+.level-cards {
+    display: flex;
+    gap: 30px;
+    max-width: 1100px;
+}
+
+.level-card {
+    background: rgba(20, 25, 45, 0.8);
+    border: 2px solid rgba(0, 255, 255, 0.3);
+    border-radius: 16px;
+    padding: 24px;
+    width: 280px;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.level-card:hover {
+    transform: translateY(-8px);
+    border-color: #00ffff;
+    box-shadow: 0 12px 40px rgba(0, 255, 255, 0.3);
+}
+
+.level-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+}
+
+.badge-cyber { background: #00ffff; color: #000; box-shadow: 0 0 10px #00ffff; }
+.badge-acid { background: #aaff00; color: #000; box-shadow: 0 0 10px #aaff00; }
+.badge-industrial { background: #ff2255; color: #fff; box-shadow: 0 0 10px #ff2255; }
+
+.level-card h2 {
+    font-size: 24px;
+    color: #ffffff;
+    margin: 0 0 8px 0;
+    letter-spacing: 2px;
+}
+
+.level-info {
+    font-size: 13px;
+    color: #aaa;
+    margin-bottom: 12px;
+}
+
+.mode-sequence {
+    font-size: 11px;
+    color: #00ffff;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 6px 10px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+}
+
+.level-progress-bg {
+    width: 100%;
+    height: 8px;
+    background: #111;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.level-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #00ffff, #00ffaa);
+    border-radius: 4px;
+    transition: width 0.4s ease;
+}
+
+.level-best {
+    font-size: 13px;
+    color: #ccc;
+    margin-bottom: 20px;
+}
+
+.btn-play {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #00ffff, #0088ff);
+    color: #000;
+    font-weight: bold;
+    font-size: 14px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: filter 0.2s ease;
+}
+
+.btn-play:hover {
+    filter: brightness(1.2);
+}
+
+.lobby-controls-hint {
+    margin-top: 40px;
+    font-size: 14px;
+    color: #666688;
+    letter-spacing: 1px;
+}
+
+/* Exit Button in Game */
+.btn-exit {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 50;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    transition: background 0.2s ease;
+    display: none;
+}
+
+.btn-exit:hover {
+    background: rgba(255, 0, 60, 0.8);
+    border-color: #ff003c;
 }

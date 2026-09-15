@@ -7,6 +7,45 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div id="lobby" class="lobby-overlay">
+        <h1 class="lobby-title">GEOMETRY DASH</h1>
+        <p class="lobby-subtitle">SELECT YOUR TRACK</p>
+
+        <div class="level-cards">
+            <div class="level-card" onclick="selectLevel(0)">
+                <div class="level-badge badge-cyber">LEVEL 1</div>
+                <h2>CYBER RAVE</h2>
+                <div class="level-info">145 BPM • NEON CYBER</div>
+                <div class="mode-sequence">CUBE ➔ SHIP ➔ BALL ➔ UFO ➔ WAVE</div>
+                <div class="level-progress-bg"><div id="progress-0" class="level-progress-fill" style="width: 0%;"></div></div>
+                <div id="best-0" class="level-best">Best: 0%</div>
+                <button class="btn-play">START LEVEL</button>
+            </div>
+
+            <div class="level-card" onclick="selectLevel(1)">
+                <div class="level-badge badge-acid">LEVEL 2</div>
+                <h2>ACID DISTRICT</h2>
+                <div class="level-info">150 BPM • ACID GREEN</div>
+                <div class="mode-sequence">BALL ➔ CUBE ➔ WAVE ➔ SHIP ➔ UFO</div>
+                <div class="level-progress-bg"><div id="progress-1" class="level-progress-fill" style="width: 0%;"></div></div>
+                <div id="best-1" class="level-best">Best: 0%</div>
+                <button class="btn-play">START LEVEL</button>
+            </div>
+
+            <div class="level-card" onclick="selectLevel(2)">
+                <div class="level-badge badge-industrial">LEVEL 3</div>
+                <h2>INDUSTRIAL HELL</h2>
+                <div class="level-info">155 BPM • CRIMSON HELL</div>
+                <div class="mode-sequence">WAVE ➔ UFO ➔ SHIP ➔ BALL ➔ CUBE</div>
+                <div class="level-progress-bg"><div id="progress-2" class="level-progress-fill" style="width: 0%;"></div></div>
+                <div id="best-2" class="level-best">Best: 0%</div>
+                <button class="btn-play">START LEVEL</button>
+            </div>
+        </div>
+        <div class="lobby-controls-hint">Press [SPACE] or Click to Jump • Press [B] for Auto-Bot Mode</div>
+    </div>
+
+    <button id="btnExitLobby" class="btn-exit" onclick="returnToLobby()">✖ LOBBY</button>
     <canvas id="gameCanvas"></canvas>
     <script src="game.js"></script>
 </body>
