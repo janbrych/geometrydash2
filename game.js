@@ -453,7 +453,7 @@ function resetGame() {
 
 // LEVEL BUILDERS
 function buildLevel1() {
-    totalLevelLength = 50200;
+    totalLevelLength = 13500;
     // Section 1: CUBE
     obstacles.push(new Obstacle('spike', 800));
     obstacles.push(new Obstacle('spike', 1200));
@@ -513,7 +513,7 @@ function buildLevel1() {
 }
 
 function buildLevel2() {
-    totalLevelLength = 50200;
+    totalLevelLength = 9500;
     // BALL
     obstacles.push(new Obstacle('spike', 800));
     obstacles.push(new Obstacle('spike', 1200, 9, 1, false, true));
@@ -550,7 +550,7 @@ function buildLevel2() {
 }
 
 function buildLevel3() {
-    totalLevelLength = 50200;
+    totalLevelLength = 6800;
     // WAVE
     obstacles.push(new Obstacle('block', 800, 1, 4));
     obstacles.push(new Obstacle('block', 800, 7, 3));
