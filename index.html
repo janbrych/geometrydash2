@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Geometry Dash Clone</title>
+    <title>Geometry Dash Clone - Main Game</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
 </head>
-<body class="theme-light">
+<body class="theme-dark">
     <!-- Game Canvas -->
     <canvas id="gameCanvas"></canvas>
 
@@ -22,43 +22,76 @@
 
             <div class="header-actions">
                 <div class="coin-badge">
-                    <span class="coin-icon">$</span>
+                    <span class="coin-icon">🪙</span>
                     <span id="lobbyCoinCount" class="coin-amount">0</span>
                 </div>
                 <button id="themeToggleBtn" class="btn-theme" title="Toggle Theme">
-                    <span id="themeIcon">🌙</span>
-                    <span id="themeLabel">Dark</span>
+                    <span id="themeIcon">☀️</span>
+                    <span id="themeLabel">Light</span>
                 </button>
             </div>
         </header>
 
         <!-- Main Content Area -->
         <main class="lobby-main">
-            <!-- Left Side: Interactive Preview & Mode Selection -->
+            <!-- Left Side: Interactive Preview & Shop Button -->
             <section class="character-section">
                 <div class="preview-card">
                     <div class="card-header">
-                        <span class="card-title">CHARACTER PREVIEW</span>
+                        <span class="card-title">SKIN PREVIEW</span>
                         <span id="selectedSkinBadge" class="skin-badge">CYBER CYAN</span>
                     </div>
                     <div class="preview-canvas-wrapper">
-                        <canvas id="previewCanvas" width="220" height="220"></canvas>
+                        <canvas id="previewCanvas" width="200" height="200"></canvas>
                     </div>
                     <p id="skinDescText" class="skin-description">The original cyber cube.</p>
+                    <button id="openShopBtn" class="btn-secondary">
+                        <span class="btn-icon">🛒</span> SKIN SHOP
+                    </button>
                 </div>
             </section>
 
-            <!-- Center / Actions Section -->
-            <section class="actions-section">
-                <button id="playBtn" class="btn-play">
-                    <span class="play-icon">▶</span>
-                    <span>PLAY GAME</span>
-                </button>
-                <div class="secondary-btns">
-                    <button id="openShopBtn" class="btn-secondary">
-                        <span class="btn-icon">🛒</span> SHOP
-                    </button>
+            <!-- Right Side: Level Selection Cards -->
+            <section class="levels-section">
+                <h2 class="section-title">SELECT TRACK</h2>
+                <div class="level-cards">
+                    <div class="level-card" onclick="selectLevel(0)">
+                        <div class="level-badge badge-cyber">INSANE • 1.2x SPEED</div>
+                        <h3>CYBER RAVE</h3>
+                        <div class="level-info">145 BPM • NEON CYBER</div>
+                        <div class="mode-sequence">CUBE ➔ SHIP ➔ BALL ➔ UFO ➔ WAVE</div>
+                        <div class="level-progress-bg"><div id="progress-0" class="level-progress-fill" style="width: 0%;"></div></div>
+                        <div class="card-footer-row">
+                            <span id="best-0" class="level-best">Best: 0%</span>
+                            <button class="btn-card-play">PLAY</button>
+                        </div>
+                    </div>
+
+                    <div class="level-card" onclick="selectLevel(1)">
+                        <div class="level-badge badge-acid">DEMON • 1.4x SPEED</div>
+                        <h3>ACID DISTRICT</h3>
+                        <div class="level-info">150 BPM • ACID GREEN</div>
+                        <div class="mode-sequence">BALL ➔ CUBE ➔ WAVE ➔ SHIP ➔ UFO</div>
+                        <div class="level-progress-bg"><div id="progress-1" class="level-progress-fill" style="width: 0%;"></div></div>
+                        <div class="card-footer-row">
+                            <span id="best-1" class="level-best">Best: 0%</span>
+                            <button class="btn-card-play">PLAY</button>
+                        </div>
+                    </div>
+
+                    <div class="level-card" onclick="selectLevel(2)">
+                        <div class="level-badge badge-industrial">EXTREME DEMON • 1.6x SPEED</div>
+                        <h3>INDUSTRIAL HELL</h3>
+                        <div class="level-info">155 BPM • CRIMSON HELL</div>
+                        <div class="mode-sequence">WAVE ➔ UFO ➔ SHIP ➔ BALL ➔ CUBE</div>
+                        <div class="level-progress-bg"><div id="progress-2" class="level-progress-fill" style="width: 0%;"></div></div>
+                        <div class="card-footer-row">
+                            <span id="best-2" class="level-best">Best: 0%</span>
+                            <button class="btn-card-play">PLAY</button>
+                        </div>
+                    </div>
                 </div>
+                <div class="lobby-controls-hint">Press [SPACE] or Click to Jump • Press [B] for Auto-Bot Mode</div>
             </section>
         </main>
 
@@ -69,7 +102,7 @@
                     <h2>SKIN SHOP</h2>
                     <div class="modal-header-right">
                         <div class="coin-badge modal-coins">
-                            <span class="coin-icon">$</span>
+                            <span class="coin-icon">🪙</span>
                             <span id="shopCoinCount" class="coin-amount">0</span>
                         </div>
                         <button id="closeShopBtn" class="btn-close">&times;</button>
@@ -84,7 +117,11 @@
 
     <!-- In-Game Pause / HUD Overlay -->
     <div id="hudOverlay" class="hud-container hidden">
-        <button id="lobbyReturnBtn" class="btn-lobby-return">🏠 Lobby</button>
+        <button id="lobbyReturnBtn" class="btn-lobby-return" onclick="returnToLobby()">🏠 Lobby</button>
+        <div class="in-game-coins">
+            <span class="coin-icon">🪙</span>
+            <span id="hudCoinCount">0</span>
+        </div>
     </div>
 
     <script src="game.js"></script>

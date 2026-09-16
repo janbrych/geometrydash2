@@ -1,58 +1,67 @@
 :root {
-    --bg-main: #f8fafc;
-    --bg-card: rgba(255, 255, 255, 0.85);
-    --border-color: rgba(0, 0, 0, 0.08);
-    --text-primary: #0f172a;
-    --text-secondary: #475569;
-    --accent-color: #2563eb;
-    --accent-glow: rgba(37, 99, 235, 0.3);
-    --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
-    --gold-color: #eab308;
-    --gold-glow: rgba(234, 179, 8, 0.3);
+    --font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --bg-gradient-dark: linear-gradient(135deg, #0b0d19 0%, #06070d 100%);
+    --bg-card-dark: rgba(18, 22, 38, 0.85);
+    --border-dark: rgba(255, 255, 255, 0.12);
+    --text-primary-dark: #ffffff;
+    --text-secondary-dark: #8f9cae;
+
+    --bg-gradient-light: linear-gradient(135deg, #eef2f7 0%, #d8e1e8 100%);
+    --bg-card-light: rgba(255, 255, 255, 0.88);
+    --border-light: rgba(0, 0, 0, 0.1);
+    --text-primary-light: #121626;
+    --text-secondary-light: #526071;
+
+    --primary-cyan: #00f0ff;
+    --primary-pink: #ff0055;
+    --accent-gold: #ffd700;
+    --accent-green: #00ff66;
 }
 
 body.theme-dark {
-    --bg-main: #090d16;
-    --bg-card: rgba(15, 23, 42, 0.85);
-    --border-color: rgba(255, 255, 255, 0.1);
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
-    --accent-color: #38bdf8;
-    --accent-glow: rgba(56, 189, 248, 0.3);
-    --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    --bg-gradient: var(--bg-gradient-dark);
+    --bg-card: var(--bg-card-dark);
+    --border-color: var(--border-dark);
+    --text-primary: var(--text-primary-dark);
+    --text-secondary: var(--text-secondary-dark);
+}
+
+body.theme-light {
+    --bg-gradient: var(--bg-gradient-light);
+    --bg-card: var(--bg-card-light);
+    --border-color: var(--border-light);
+    --text-primary: var(--text-primary-light);
+    --text-secondary: var(--text-secondary-light);
 }
 
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     user-select: none;
 }
 
 body, html {
+    width: 100%;
+    height: 100%;
     overflow: hidden;
-    background-color: var(--bg-main);
+    background: #000;
+    font-family: var(--font-family);
     color: var(--text-primary);
-    width: 100vw;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Canvas Styling */
 #gameCanvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
     z-index: 1;
-    display: block;
 }
 
-/* Lobby Container UI */
+/* Lobby Container */
 .lobby-container {
     position: absolute;
     top: 0;
@@ -60,18 +69,18 @@ body, html {
     width: 100%;
     height: 100%;
     z-index: 10;
+    background: var(--bg-gradient);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 2rem 3rem;
-    pointer-events: auto;
-    background: radial-gradient(circle at center, transparent 0%, var(--bg-main) 100%);
-    transition: opacity 0.3s ease, visibility 0.3s ease;
+    padding: 24px 40px;
+    box-sizing: border-box;
+    transition: background 0.3s ease, opacity 0.3s ease;
+    backdrop-filter: blur(8px);
 }
 
 .lobby-container.hidden {
     opacity: 0;
-    visibility: hidden;
     pointer-events: none;
 }
 
@@ -86,117 +95,106 @@ body, html {
 .logo-group {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 12px;
 }
 
 .logo-icon {
-    font-size: 2rem;
-    color: var(--accent-color);
-    transform: rotate(15deg);
-    display: inline-block;
+    font-size: 32px;
+    color: var(--primary-cyan);
+    filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.6));
+    animation: pulse 2s infinite alternate;
 }
 
 .logo-title {
-    font-size: 2.2rem;
+    font-size: 32px;
     font-weight: 900;
     letter-spacing: 2px;
     color: var(--text-primary);
 }
 
 .logo-title span {
-    color: var(--accent-color);
+    color: var(--primary-cyan);
+    text-shadow: 0 0 12px rgba(0, 240, 255, 0.5);
 }
 
 .header-actions {
     display: flex;
     align-items: center;
-    gap: 1.25rem;
+    gap: 16px;
 }
 
-/* Coin Badge */
 .coin-badge {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    padding: 0.5rem 1.2rem;
-    border-radius: 999px;
+    gap: 8px;
+    background: rgba(255, 215, 0, 0.15);
+    border: 1.5px solid rgba(255, 215, 0, 0.4);
+    padding: 8px 16px;
+    border-radius: 20px;
     font-weight: 800;
-    font-size: 1.1rem;
-    box-shadow: var(--card-shadow);
-    backdrop-filter: blur(10px);
+    color: #ffd700;
+    font-size: 16px;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
 }
 
-.coin-icon {
-    width: 24px;
-    height: 24px;
-    background: #ffd700;
-    color: #000;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.9rem;
-    box-shadow: 0 0 10px var(--gold-glow);
-}
-
-.coin-amount {
-    color: var(--text-primary);
-}
-
-/* Theme Toggle Button */
 .btn-theme {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
-    padding: 0.55rem 1.2rem;
-    border-radius: 999px;
-    font-size: 1rem;
-    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: 20px;
     cursor: pointer;
-    box-shadow: var(--card-shadow);
+    font-weight: 600;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     transition: all 0.2s ease;
-    backdrop-filter: blur(10px);
 }
 
 .btn-theme:hover {
     transform: translateY(-2px);
-    border-color: var(--accent-color);
+    border-color: var(--primary-cyan);
 }
 
 /* Main Layout */
 .lobby-main {
-    display: flex;
-    justify-content: space-around;
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 32px;
     align-items: center;
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
     flex: 1;
+    margin: 20px 0;
 }
 
-/* Character Card */
+/* Section Title */
+.section-title {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    text-transform: uppercase;
+}
+
+/* Preview Card */
 .character-section {
+    height: 100%;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    justify-content: center;
 }
 
 .preview-card {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: 24px;
-    padding: 1.5rem;
+    border-radius: 20px;
+    padding: 24px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    box-shadow: var(--card-shadow);
-    backdrop-filter: blur(12px);
-    width: 320px;
+    gap: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
 .card-header {
@@ -204,154 +202,246 @@ body, html {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
 }
 
 .card-title {
-    font-size: 0.85rem;
+    font-size: 12px;
     font-weight: 800;
-    letter-spacing: 1px;
     color: var(--text-secondary);
+    letter-spacing: 1px;
 }
 
 .skin-badge {
-    background: var(--accent-glow);
-    color: var(--accent-color);
-    padding: 0.25rem 0.6rem;
-    border-radius: 8px;
-    font-size: 0.75rem;
+    font-size: 11px;
     font-weight: 800;
-    letter-spacing: 1px;
+    background: rgba(0, 240, 255, 0.15);
+    color: var(--primary-cyan);
+    padding: 4px 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(0, 240, 255, 0.3);
 }
 
 .preview-canvas-wrapper {
-    width: 220px;
-    height: 220px;
-    border-radius: 16px;
-    background: radial-gradient(circle at center, rgba(0,0,0,0.03) 0%, rgba(0,0,0,0.1) 100%);
+    position: relative;
+    width: 200px;
+    height: 200px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 16px;
     border: 1px dashed var(--border-color);
 }
 
 .skin-description {
-    font-size: 0.95rem;
+    font-size: 13px;
     color: var(--text-secondary);
     text-align: center;
 }
 
-/* Actions Section */
-.actions-section {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    align-items: center;
-}
-
-.btn-play {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    background: linear-gradient(135deg, #2563eb, #3b82f6);
-    color: #ffffff;
-    font-size: 1.8rem;
-    font-weight: 900;
-    padding: 1.25rem 3.5rem;
-    border: none;
-    border-radius: 20px;
-    cursor: pointer;
-    box-shadow: 0 12px 30px var(--accent-glow);
-    transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    letter-spacing: 2px;
-}
-
-.btn-play:hover {
-    transform: translateY(-4px) scale(1.03);
-    box-shadow: 0 20px 40px var(--accent-glow);
-}
-
-.play-icon {
-    font-size: 1.8rem;
-}
-
-.secondary-btns {
-    display: flex;
-    gap: 1rem;
-}
-
 .btn-secondary {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    background: var(--bg-card);
+    border: 1.5px solid var(--border-color);
+    color: var(--text-primary);
+    font-weight: 700;
+    cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    font-size: 1.1rem;
-    font-weight: 800;
-    padding: 0.85rem 2rem;
-    border-radius: 16px;
-    cursor: pointer;
-    box-shadow: var(--card-shadow);
+    justify-content: center;
+    gap: 8px;
     transition: all 0.2s ease;
-    backdrop-filter: blur(10px);
 }
 
 .btn-secondary:hover {
+    background: rgba(0, 240, 255, 0.1);
+    border-color: var(--primary-cyan);
+    color: var(--primary-cyan);
     transform: translateY(-2px);
-    border-color: var(--accent-color);
 }
 
-/* Modal UI */
+/* Level Cards */
+.levels-section {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.level-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.level-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 18px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.level-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 28px rgba(0, 240, 255, 0.2);
+    border-color: var(--primary-cyan);
+}
+
+.level-badge {
+    font-size: 11px;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 8px;
+    align-self: flex-start;
+    letter-spacing: 0.5px;
+}
+
+.badge-cyber {
+    background: rgba(0, 240, 255, 0.15);
+    color: #00ffff;
+    border: 1px solid rgba(0, 240, 255, 0.3);
+}
+
+.badge-acid {
+    background: rgba(170, 255, 0, 0.15);
+    color: #aaff00;
+    border: 1px solid rgba(170, 255, 0, 0.3);
+}
+
+.badge-industrial {
+    background: rgba(255, 34, 85, 0.15);
+    color: #ff2255;
+    border: 1px solid rgba(255, 34, 85, 0.3);
+}
+
+.level-card h3 {
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 1px;
+}
+
+.level-info {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+
+.mode-sequence {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--primary-cyan);
+    background: rgba(0, 0, 0, 0.2);
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.level-progress-bg {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 4px;
+}
+
+.level-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-cyan), var(--accent-green));
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.card-footer-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 6px;
+}
+
+.level-best {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--text-secondary);
+}
+
+.btn-card-play {
+    background: var(--primary-cyan);
+    color: #000;
+    border: none;
+    font-weight: 900;
+    font-size: 12px;
+    padding: 6px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.level-card:hover .btn-card-play {
+    transform: scale(1.05);
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+}
+
+.lobby-controls-hint {
+    margin-top: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-align: center;
+    opacity: 0.8;
+}
+
+/* Modal Window */
 .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(8px);
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
     z-index: 100;
     display: flex;
-    justify-content: center;
     align-items: center;
-    opacity: 1;
-    visibility: visible;
-    transition: all 0.3s ease;
+    justify-content: center;
+    transition: opacity 0.3s ease;
 }
 
 .modal-overlay.hidden {
     opacity: 0;
-    visibility: hidden;
     pointer-events: none;
 }
 
 .modal-content {
-    background: var(--bg-main);
+    background: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: 28px;
-    width: 90%;
-    max-width: 960px;
+    width: 720px;
+    max-width: 90%;
     max-height: 85vh;
+    border-radius: 24px;
+    padding: 28px;
     display: flex;
     flex-direction: column;
-    padding: 2rem;
-    box-shadow: var(--card-shadow);
-    overflow: hidden;
+    gap: 20px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
 }
 
 .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border-color);
 }
 
 .modal-header h2 {
-    font-size: 1.8rem;
+    font-size: 24px;
     font-weight: 900;
     letter-spacing: 1px;
 }
@@ -359,16 +449,16 @@ body, html {
 .modal-header-right {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    gap: 16px;
 }
 
 .btn-close {
-    background: none;
+    background: transparent;
     border: none;
-    font-size: 2rem;
     color: var(--text-secondary);
+    font-size: 28px;
     cursor: pointer;
-    transition: color 0.2s ease;
+    line-height: 1;
 }
 
 .btn-close:hover {
@@ -378,96 +468,88 @@ body, html {
 /* Skin Grid */
 .skin-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 1.25rem;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
     overflow-y: auto;
-    padding-right: 0.5rem;
-    max-height: 60vh;
+    padding-right: 8px;
+    max-height: 50vh;
 }
 
 .skin-card {
-    background: var(--bg-card);
-    border: 2px solid var(--border-color);
-    border-radius: 18px;
-    padding: 1.2rem;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1.5px solid var(--border-color);
+    border-radius: 16px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.75rem;
+    gap: 10px;
     transition: all 0.2s ease;
-    position: relative;
 }
 
-.skin-card.equipped {
-    border-color: var(--accent-color);
-    box-shadow: 0 0 20px var(--accent-glow);
+.skin-card.selected {
+    border-color: var(--primary-cyan);
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+    background: rgba(0, 240, 255, 0.05);
 }
 
-.skin-card:hover {
-    transform: translateY(-3px);
-}
-
-.skin-preview-mini {
-    width: 70px;
-    height: 70px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0.5rem 0;
+.skin-preview-swatch {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.2);
 }
 
 .skin-name {
+    font-size: 14px;
     font-weight: 800;
-    font-size: 1.1rem;
     text-align: center;
 }
 
 .skin-price {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    font-weight: 800;
-    color: var(--gold-color);
+    font-size: 12px;
+    font-weight: 700;
+    color: #ffd700;
 }
 
 .btn-skin-action {
     width: 100%;
-    padding: 0.6rem;
-    border-radius: 12px;
+    padding: 8px;
+    border-radius: 10px;
     border: none;
     font-weight: 800;
-    font-size: 0.95rem;
+    font-size: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
-.btn-skin-action.buy {
-    background: #eab308;
+.btn-equip {
+    background: var(--primary-cyan);
     color: #000;
 }
 
-.btn-skin-action.buy:hover {
-    background: #facc15;
+.btn-buy {
+    background: #ffd700;
+    color: #000;
 }
 
-.btn-skin-action.equip {
-    background: var(--accent-color);
-    color: #fff;
-}
-
-.btn-skin-action.equipped {
-    background: rgba(0,0,0,0.1);
+.btn-equipped {
+    background: rgba(255, 255, 255, 0.1);
     color: var(--text-secondary);
     cursor: default;
 }
 
-/* In-game HUD */
+/* HUD Overlay */
 .hud-container {
     position: absolute;
     top: 20px;
     left: 20px;
-    z-index: 20;
+    right: 20px;
+    z-index: 5;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: none;
 }
 
 .hud-container.hidden {
@@ -475,18 +557,39 @@ body, html {
 }
 
 .btn-lobby-return {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    padding: 0.5rem 1rem;
+    pointer-events: auto;
+    background: rgba(18, 22, 38, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 10px 18px;
     border-radius: 12px;
     font-weight: 800;
+    font-size: 14px;
     cursor: pointer;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(5px);
     transition: all 0.2s ease;
 }
 
 .btn-lobby-return:hover {
-    border-color: var(--accent-color);
-    transform: translateY(-2px);
+    background: rgba(0, 240, 255, 0.2);
+    border-color: var(--primary-cyan);
+    transform: scale(1.05);
+}
+
+.in-game-coins {
+    background: rgba(18, 22, 38, 0.8);
+    border: 1px solid rgba(255, 215, 0, 0.4);
+    color: #ffd700;
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.08); }
 }
