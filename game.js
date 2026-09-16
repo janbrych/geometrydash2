@@ -28,6 +28,14 @@ const MODES = {
     WAVE: 'wave'
 };
 
+const PORTAL_COLORS = {
+    cube: '#00ff66',
+    ship: '#ff00aa',
+    ball: '#ff2200',
+    ufo: '#ff9900',
+    wave: '#0099ff'
+};
+
 // 10+ Skins Definition
 const SKINS = [
     {
@@ -170,6 +178,7 @@ const LEVEL_CONFIGS = [
 ];
 
 let currentLevelIdx = 0;
+let customLevelData = null;
 let levelBestScores = [0, 0, 0];
 
 // Economy & Unlock Storage
@@ -262,6 +271,12 @@ function initUI() {
     document.getElementById('openShopBtn').addEventListener('click', openShop);
     document.getElementById('closeShopBtn').addEventListener('click', closeShop);
 
+    // Community Modal Listeners
+    const openCommBtn = document.getElementById('openCommunityBtn');
+    const closeCommBtn = document.getElementById('closeCommunityBtn');
+    if (openCommBtn) openCommBtn.addEventListener('click', openCommunityModal);
+    if (closeCommBtn) closeCommBtn.addEventListener('click', closeCommunityModal);
+
     // Initial Best Scores
     LEVEL_CONFIGS.forEach((cfg, idx) => {
         let best = localStorage.getItem(`gd_best_level_${idx}`) || '0';
@@ -307,6 +322,39 @@ function openShop() {
 
 function closeShop() {
     document.getElementById('shopModal').classList.add('hidden');
+}
+
+function openCommunityModal() {
+    const list = document.getElementById('communityLevelsList');
+    list.innerHTML = '';
+    const levels = typeof LevelDB !== 'undefined' ? LevelDB.getAllLevels() : [];
+
+    if (levels.length === 0) {
+        list.innerHTML = '<p style="color:#8b95a5; text-align:center;">Zatím nebyly vytvořeny žádné komunitní levely. Vytvořte nový v Level Editoru!</p>';
+    } else {
+        levels.forEach(lvl => {
+            const card = document.createElement('div');
+            card.style.cssText = 'background: #1c2030; border: 1px solid #2b3147; border-radius: 8px; padding: 14px; display: flex; align-items: center; justify-content: space-between;';
+            card.innerHTML = `
+                <div>
+                    <h4 style="color:#00f0ff; font-size:1.1rem; margin-bottom:4px;">${lvl.title}</h4>
+                    <p style="color:#64748b; font-size:0.8rem;">Objektů: ${lvl.obstacles.length} • Rychlost: ${lvl.speed}x • Autor: ${lvl.author || 'Player'}</p>
+                </div>
+                <button class="btn-card-play" style="padding: 8px 18px;">HRÁT</button>
+            `;
+            card.querySelector('button').addEventListener('click', () => {
+                closeCommunityModal();
+                selectCommunityLevel(lvl);
+            });
+            list.appendChild(card);
+        });
+    }
+
+    document.getElementById('communityModal').classList.remove('hidden');
+}
+
+function closeCommunityModal() {
+    document.getElementById('communityModal').classList.add('hidden');
 }
 
 function getEquippedSkinObj() {
@@ -377,11 +425,29 @@ function updatePreviewBadge() {
 // Select level from lobby
 function selectLevel(idx) {
     currentLevelIdx = idx;
+    customLevelData = null;
     const config = LEVEL_CONFIGS[currentLevelIdx];
     currentSpeed = config.speed;
 
     bgMusic.pause();
     bgMusic = new Audio(config.audioSrc);
+    bgMusic.loop = true;
+    bgMusic.volume = 0.6;
+
+    document.getElementById('lobbyOverlay').classList.add('hidden');
+    document.getElementById('hudOverlay').classList.remove('hidden');
+
+    resetGame();
+    gameState = 'PLAYING';
+    bgMusic.play().catch(() => {});
+}
+
+function selectCommunityLevel(levelData) {
+    customLevelData = levelData;
+    currentSpeed = levelData.speed || 10.5;
+
+    bgMusic.pause();
+    bgMusic = new Audio(levelData.music || 'techno_level2.wav');
     bgMusic.loop = true;
     bgMusic.volume = 0.6;
 
@@ -402,8 +468,15 @@ function returnToLobby() {
 }
 
 function resetGame() {
-    const config = LEVEL_CONFIGS[currentLevelIdx];
-    currentSpeed = config.speed;
+    if (customLevelData) {
+        currentSpeed = customLevelData.speed || 10.5;
+        player.mode = customLevelData.initialMode || MODES.CUBE;
+        totalLevelLength = customLevelData.totalLength || 20000;
+    } else {
+        const config = LEVEL_CONFIGS[currentLevelIdx];
+        currentSpeed = config.speed;
+        player.mode = config.initialMode;
+    }
 
     player.x = 150;
     player.y = canvas.height - GROUND_HEIGHT - PLAYER_SIZE;
@@ -413,7 +486,6 @@ function resetGame() {
     player.jumpBufferCounter = 0;
     player.rotation = 0;
     player.gravityDir = 1;
-    player.mode = config.initialMode;
     player.trail = [];
 
     const equippedSkin = getEquippedSkinObj();
@@ -425,11 +497,35 @@ function resetGame() {
     levelCoinsCollectedInRun = 0;
     updateCoinDisplays();
 
-    // Call level builder
-    config.builder();
+    if (customLevelData) {
+        buildCustomLevel(customLevelData);
+    } else {
+        LEVEL_CONFIGS[currentLevelIdx].builder();
+    }
 }
 
-// LEVEL BUILDERS
+function buildCustomLevel(lvl) {
+    lvl.obstacles.forEach(o => {
+        if (o.type === 'portal') {
+            const obs = new Obstacle('portal', o.x, 5, 1);
+            obs.portalMode = o.mode;
+            obstacles.push(obs);
+            transitions.push({ distance: o.x, mode: o.mode });
+        } else if (o.type === 'spike') {
+            obstacles.push(new Obstacle('spike', o.x, 1, 1, false, !!o.ceiling));
+        } else if (o.type === 'block') {
+            const hUnits = Math.round((o.h || 40) / 40);
+            const wUnits = Math.round((o.w || 40) / 40);
+            const yUnits = Math.round((o.y || 0) / 40) + hUnits;
+            obstacles.push(new Obstacle('block', o.x, yUnits, wUnits));
+        } else {
+            const yUnits = Math.round((o.y || 0) / 40) + 1;
+            obstacles.push(new Obstacle(o.type, o.x, yUnits, 1));
+        }
+    });
+}
+
+// LEVEL BUILDERS FOR OFFICIAL TRACKS
 function buildLevel1() {
     totalLevelLength = 50200;
     // Section 1: CUBE
@@ -448,6 +544,8 @@ function buildLevel1() {
     obstacles.push(new Obstacle('yellow_ring', 3200, 3));
     obstacles.push(new Obstacle('block', 3500, 1, 1));
 
+    // Colored Mode Portals
+    const p1 = new Obstacle('portal', 4000, 5, 1); p1.portalMode = MODES.SHIP; obstacles.push(p1);
     transitions.push({ distance: 4000, mode: MODES.SHIP });
 
     // Section 2: SHIP
@@ -457,6 +555,7 @@ function buildLevel1() {
     obstacles.push(new Obstacle('block', 5200, 1, 3));
     obstacles.push(new Obstacle('block', 5200, 6, 4));
 
+    const p2 = new Obstacle('portal', 6000, 5, 1); p2.portalMode = MODES.BALL; obstacles.push(p2);
     transitions.push({ distance: 6000, mode: MODES.BALL });
 
     // Section 3: BALL
@@ -466,6 +565,7 @@ function buildLevel1() {
     obstacles.push(new Obstacle('yellow_ring', 7300, 4));
     obstacles.push(new Obstacle('block', 7600, 7, 3));
 
+    const p3 = new Obstacle('portal', 8000, 5, 1); p3.portalMode = MODES.UFO; obstacles.push(p3);
     transitions.push({ distance: 8000, mode: MODES.UFO });
 
     // Section 4: UFO
@@ -474,6 +574,7 @@ function buildLevel1() {
     obstacles.push(new Obstacle('coin', 8800, 4));
     obstacles.push(new Obstacle('yellow_ring', 9200, 5));
 
+    const p4 = new Obstacle('portal', 10000, 5, 1); p4.portalMode = MODES.WAVE; obstacles.push(p4);
     transitions.push({ distance: 10000, mode: MODES.WAVE });
 
     // Section 5: WAVE
@@ -482,6 +583,7 @@ function buildLevel1() {
     obstacles.push(new Obstacle('block', 11200, 1, 3));
     obstacles.push(new Obstacle('block', 11200, 6, 4));
 
+    const p5 = new Obstacle('portal', 12000, 5, 1); p5.portalMode = MODES.CUBE; obstacles.push(p5);
     transitions.push({ distance: 12000, mode: MODES.CUBE });
 
     // Final stretch
@@ -499,6 +601,7 @@ function buildLevel2() {
     obstacles.push(new Obstacle('block', 2000, 1, 2));
     obstacles.push(new Obstacle('coin', 2010, 3));
 
+    const p1 = new Obstacle('portal', 2500, 5, 1); p1.portalMode = MODES.CUBE; obstacles.push(p1);
     transitions.push({ distance: 2500, mode: MODES.CUBE });
 
     // CUBE
@@ -506,6 +609,7 @@ function buildLevel2() {
     obstacles.push(new Obstacle('yellow_ring', 3200, 4));
     obstacles.push(new Obstacle('block', 3600, 2, 2));
 
+    const p2 = new Obstacle('portal', 4000, 5, 1); p2.portalMode = MODES.WAVE; obstacles.push(p2);
     transitions.push({ distance: 4000, mode: MODES.WAVE });
 
     // WAVE
@@ -513,12 +617,14 @@ function buildLevel2() {
     obstacles.push(new Obstacle('block', 4500, 7, 3));
     obstacles.push(new Obstacle('coin', 4800, 5));
 
+    const p3 = new Obstacle('portal', 5500, 5, 1); p3.portalMode = MODES.SHIP; obstacles.push(p3);
     transitions.push({ distance: 5500, mode: MODES.SHIP });
 
     // SHIP
     obstacles.push(new Obstacle('block', 6000, 1, 3));
     obstacles.push(new Obstacle('block', 6000, 6, 4));
 
+    const p4 = new Obstacle('portal', 7500, 5, 1); p4.portalMode = MODES.UFO; obstacles.push(p4);
     transitions.push({ distance: 7500, mode: MODES.UFO });
 
     // UFO
@@ -534,24 +640,28 @@ function buildLevel3() {
     obstacles.push(new Obstacle('block', 800, 7, 3));
     obstacles.push(new Obstacle('coin', 1200, 5));
 
+    const p1 = new Obstacle('portal', 1600, 5, 1); p1.portalMode = MODES.UFO; obstacles.push(p1);
     transitions.push({ distance: 1600, mode: MODES.UFO });
 
     // UFO
     obstacles.push(new Obstacle('yellow_ring', 2000, 4));
     obstacles.push(new Obstacle('yellow_ring', 2400, 6));
 
+    const p2 = new Obstacle('portal', 2800, 5, 1); p2.portalMode = MODES.SHIP; obstacles.push(p2);
     transitions.push({ distance: 2800, mode: MODES.SHIP });
 
     // SHIP
     obstacles.push(new Obstacle('block', 3200, 1, 3));
     obstacles.push(new Obstacle('block', 3200, 6, 4));
 
+    const p3 = new Obstacle('portal', 4000, 5, 1); p3.portalMode = MODES.BALL; obstacles.push(p3);
     transitions.push({ distance: 4000, mode: MODES.BALL });
 
     // BALL
     obstacles.push(new Obstacle('spike', 4400));
     obstacles.push(new Obstacle('yellow_ring', 4800, 4));
 
+    const p4 = new Obstacle('portal', 5200, 5, 1); p4.portalMode = MODES.CUBE; obstacles.push(p4);
     transitions.push({ distance: 5200, mode: MODES.CUBE });
 
     // CUBE
@@ -563,7 +673,7 @@ function buildLevel3() {
 // Obstacle Constructor Class
 class Obstacle {
     constructor(type, x, heightUnits = 1, widthUnits = 1, onTop = false, ceiling = false) {
-        this.type = type; // 'spike', 'block', 'yellow_pad', 'yellow_ring', 'coin'
+        this.type = type; // 'spike', 'block', 'yellow_pad', 'yellow_ring', 'coin', 'portal'
         this.x = x;
         this.heightUnits = heightUnits;
         this.widthUnits = widthUnits;
@@ -571,6 +681,7 @@ class Obstacle {
         this.height = heightUnits * 40;
         this.ceiling = ceiling;
         this.collected = false;
+        this.portalMode = null;
 
         if (this.ceiling) {
             this.y = CEILING_HEIGHT;
@@ -591,6 +702,10 @@ class Obstacle {
             this.width = 30;
             this.height = 30;
             this.y = canvas.height - GROUND_HEIGHT - (heightUnits * 40);
+        } else if (this.type === 'portal') {
+            this.width = 40;
+            this.height = 200;
+            this.y = canvas.height - GROUND_HEIGHT - 200;
         }
     }
 
@@ -647,6 +762,24 @@ class Obstacle {
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText('$', screenX + 15, this.y + 15);
+            ctx.shadowBlur = 0;
+        } else if (this.type === 'portal') {
+            const portalColor = PORTAL_COLORS[this.portalMode] || '#ffffff';
+            ctx.fillStyle = portalColor;
+            ctx.globalAlpha = 0.25;
+            ctx.fillRect(screenX, this.y, this.width, this.height);
+            ctx.globalAlpha = 1.0;
+
+            ctx.strokeStyle = portalColor;
+            ctx.shadowColor = portalColor;
+            ctx.shadowBlur = 16;
+            ctx.lineWidth = 4;
+            ctx.strokeRect(screenX, this.y, this.width, this.height);
+
+            ctx.fillStyle = portalColor;
+            ctx.font = 'bold 14px Outfit';
+            ctx.textAlign = 'center';
+            ctx.fillText(this.portalMode ? this.portalMode.toUpperCase() : 'PORTAL', screenX + this.width / 2, this.y + this.height / 2);
             ctx.shadowBlur = 0;
         }
     }
@@ -882,7 +1015,7 @@ function update() {
 
     // Progress % calculation
     let currentProgress = Math.min(100, Math.floor((gameDistance / totalLevelLength) * 100));
-    if (currentProgress > levelBestScores[currentLevelIdx]) {
+    if (!customLevelData && currentProgress > levelBestScores[currentLevelIdx]) {
         levelBestScores[currentLevelIdx] = currentProgress;
         localStorage.setItem(`gd_best_level_${currentLevelIdx}`, currentProgress.toString());
         updateLevelProgressUI(currentLevelIdx, currentProgress);
