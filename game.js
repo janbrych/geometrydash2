@@ -740,9 +740,35 @@ function update() {
         }
     });
 
-    player.trail.push({ x: player.x, y: player.y, rotation: player.rotation, life: 1.0 });
-    if (player.trail.length > 10) player.trail.shift();
-    player.trail.forEach(t => { t.x -= SPEED * 0.8; t.life -= 0.1; });
+    // Enhanced player trail & mode-specific particle effects
+    player.trail.push({ x: player.x, y: player.y, rotation: player.rotation, mode: player.mode, life: 1.0 });
+    if (player.trail.length > 12) player.trail.shift();
+    player.trail.forEach(t => { t.x -= SPEED * 0.8; t.life -= 0.08; });
+
+    // Continuous trailing particles behind player
+    if (gameState === 'PLAYING') {
+        const px = player.x + player.width / 2;
+        const py = player.y + player.height / 2;
+
+        if (Math.random() < 0.8) {
+            let pColor = player.color;
+            let vx = -SPEED * (0.2 + Math.random() * 0.4);
+            let vy = (Math.random() - 0.5) * 3;
+            let size = Math.random() * 6 + 2;
+
+            if (player.mode === MODES.SHIP) {
+                pColor = Math.random() > 0.5 ? '#ffaa00' : '#ff3300'; // Thruster flame
+                vx = -SPEED * 1.2;
+            } else if (player.mode === MODES.WAVE) {
+                pColor = '#ffffff';
+                size = Math.random() * 4 + 2;
+            } else if (player.mode === MODES.BALL) {
+                pColor = player.gravityDir === 1 ? '#00ffaa' : '#ff00aa';
+            }
+
+            particles.push(new Particle(px - player.width / 2, py, pColor, size, vx, vy));
+        }
+    }
 
     particles.forEach(p => p.update());
     particles = particles.filter(p => p.life > 0);
@@ -771,16 +797,58 @@ function draw() {
         ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
     }
 
-    // Near background grid (parallax)
+    // Near background grid (parallax with pulsating strobe)
+    const pulse = 0.15 + Math.sin(gameDistance * 0.05) * 0.08;
     const bgOffset = (gameDistance * 0.5) % 100;
-    ctx.strokeStyle = `hsl(${hue}, 40%, 15%)`;
+    ctx.strokeStyle = `hsla(${hue}, 50%, 25%, ${pulse})`;
     ctx.lineWidth = 1;
     for (let x = -bgOffset; x < canvas.width; x += 100) {
         ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
     }
 
+    // Distracting floating background geometric shapes & optical illusions
+    ctx.save();
+    for (let i = 0; i < 6; i++) {
+        let shapeX = ((i * 350 + gameDistance * 0.3) % (canvas.width + 400)) - 200;
+        let shapeY = 180 + Math.sin(i * 1.5 + gameDistance * 0.02) * 120;
+        let rot = gameDistance * 0.02 * (i % 2 === 0 ? 1 : -1);
+
+        ctx.save();
+        ctx.translate(canvas.width - shapeX, shapeY);
+        ctx.rotate(rot);
+        ctx.strokeStyle = `hsla(${(hue + i * 60) % 360}, 60%, 40%, 0.18)`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        if (i % 2 === 0) {
+            ctx.rect(-30, -30, 60, 60);
+        } else {
+            ctx.moveTo(0, -35); ctx.lineTo(30, 25); ctx.lineTo(-30, 25); ctx.closePath();
+        }
+        ctx.stroke();
+        ctx.restore();
+    }
+
     const groundY = canvas.height - GROUND_HEIGHT;
     const ceilY = CEILING_HEIGHT;
+
+    // Optical Illusion Fake Non-Colliding Spikes/Blocks (Distractions)
+    for (let i = 0; i < 4; i++) {
+        let fakeX = ((i * 1200 + gameDistance * 0.6) % (totalLevelLength)) - gameDistance;
+        let fakeY = groundY - 120 - Math.sin(i * 2.3) * 80;
+        if (fakeX > -100 && fakeX < canvas.width + 100) {
+            ctx.save();
+            ctx.globalAlpha = 0.12; // Low opacity fake distraction
+            ctx.fillStyle = player.color;
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(fakeX, fakeY); ctx.lineTo(fakeX + 25, fakeY - 50); ctx.lineTo(fakeX + 50, fakeY);
+            ctx.closePath();
+            ctx.fill(); ctx.stroke();
+            ctx.restore();
+        }
+    }
+    ctx.restore();
     ctx.fillStyle = '#050505';
     ctx.fillRect(0, groundY, canvas.width, GROUND_HEIGHT);
     ctx.fillRect(0, 0, canvas.width, ceilY);
