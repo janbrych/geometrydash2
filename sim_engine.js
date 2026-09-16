@@ -5,7 +5,7 @@ const BUFFER_TIME = 5;
 const GROUND_HEIGHT = 100;
 const CEILING_HEIGHT = 100;
 const PLAYER_SIZE = 40;
-const SPEED = 7.5;
+let currentSimSpeed = 9.0;
 const CANVAS_HEIGHT = 800; // standard virtual height for simulation
 
 const MODES = {
@@ -21,7 +21,8 @@ class GameSimulator {
         this.reset();
     }
 
-    reset() {
+    reset(speed = 9.0) {
+        this.speed = speed;
         this.player = {
             x: 150,
             y: CANVAS_HEIGHT - GROUND_HEIGHT - PLAYER_SIZE,
@@ -67,11 +68,11 @@ class GameSimulator {
         if (this.jumpPressed) this.player.jumpBufferCounter = BUFFER_TIME;
         else if (this.player.jumpBufferCounter > 0) this.player.jumpBufferCounter--;
 
-        this.gameDistance += SPEED;
+        this.gameDistance += this.speed;
 
         // Transitions
         this.transitions.forEach(t => {
-            if (this.gameDistance >= t.x && this.gameDistance < t.x + SPEED) {
+            if (this.gameDistance >= t.x && this.gameDistance < t.x + this.speed) {
                 this.player.mode = t.mode;
             }
         });
@@ -107,7 +108,7 @@ class GameSimulator {
                 this.player.velocityY += GRAVITY;
                 break;
             case MODES.WAVE:
-                if (this.jumpPressed) this.player.velocityY = -SPEED * 1.3; else this.player.velocityY = SPEED * 1.3;
+                if (this.jumpPressed) this.player.velocityY = -this.speed * 1.3; else this.player.velocityY = this.speed * 1.3;
                 break;
         }
 
@@ -196,4 +197,4 @@ class GameSimulator {
     }
 }
 
-module.exports = { GameSimulator, MODES, SPEED, GRAVITY, JUMP_FORCE, CANVAS_HEIGHT, GROUND_HEIGHT };
+module.exports = { GameSimulator, MODES, GRAVITY, JUMP_FORCE, CANVAS_HEIGHT, GROUND_HEIGHT };

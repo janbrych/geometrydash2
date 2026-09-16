@@ -18,7 +18,7 @@ const GROUND_HEIGHT = 100;
 const CEILING_HEIGHT = 100;
 const PLAYER_SIZE = 40;
 const ROTATION_SPEED = 0.15;
-const SPEED = 7.5; // Slightly faster for more challenge
+let currentSpeed = 9.0;
 
 const MODES = {
     CUBE: 'cube',
@@ -33,6 +33,8 @@ const LEVEL_CONFIGS = [
     {
         id: 0,
         title: 'CYBER RAVE',
+        difficulty: 'INSANE',
+        speed: 9.0,
         audioSrc: 'techno_level1.wav',
         playerColor: '#00ffff',
         bgHueOffset: 180,
@@ -42,6 +44,8 @@ const LEVEL_CONFIGS = [
     {
         id: 1,
         title: 'ACID DISTRICT',
+        difficulty: 'DEMON',
+        speed: 10.5,
         audioSrc: 'techno_level2.wav',
         playerColor: '#aaff00',
         bgHueOffset: 80,
@@ -51,6 +55,8 @@ const LEVEL_CONFIGS = [
     {
         id: 2,
         title: 'INDUSTRIAL HELL',
+        difficulty: 'EXTREME DEMON',
+        speed: 12.0,
         audioSrc: 'techno_level3.wav',
         playerColor: '#ff2255',
         bgHueOffset: 340,
@@ -140,7 +146,7 @@ class Particle {
         this.decay = 0.01 + Math.random() * 0.02;
     }
     update() {
-        this.x += this.vx - SPEED;
+        this.x += this.vx - currentSpeed;
         this.y += this.vy;
         this.vy += 0.2 * player.gravityDir;
         this.life -= this.decay;
@@ -167,54 +173,47 @@ function addSection(startX, obstaclesList) {
     });
 }
 
-// LEVEL 1 BUILDER
+// LEVEL 1 BUILDER (CYBER RAVE - INSANE, Speed 9.0)
 function buildLevel1() {
     let curX = 1200;
-    addSection(curX, [
-        { x: 300, y: 0, type: 'spike' },
-        { x: 800, y: 0, type: 'spike' },
-        { x: 1300, y: 0, type: 'block', h: 30, w: 100 },
-        { x: 1400, y: 0, type: 'block', h: 60, w: 100 },
-        { x: 1800, y: 0, type: 'spike' },
-        { x: 2200, y: 0, type: 'ring', h: 100 },
-        { x: 2400, y: 100, type: 'block', w: 120, h: 20 },
-        { x: 2900, y: 0, type: 'spike' },
-        { x: 3300, y: 0, type: 'spike' },
-    ]);
-    curX += 3800;
 
+    // CUBE MODE: Multi-elevation platforms, Pad launch, Orb chains, Triple Spikes
     addSection(curX, [
-        { x: 300, y: 0, type: 'pad' },
-        { x: 700, y: 140, type: 'block', w: 120, h: 20 },
-        { x: 1000, y: 140, type: 'ring', h: 50 },
-        { x: 1300, y: 220, type: 'block', w: 120, h: 20 },
-        { x: 1600, y: 220, type: 'ring', h: 50 },
-        { x: 1900, y: 300, type: 'block', w: 120, h: 20 },
-        { x: 2300, y: 0, type: 'spike' },
+        { x: 300, y: 0, type: 'pad' }, // Launch to platform 1
+        { x: 750, y: 180, type: 'block', w: 140, h: 20 },
+        { x: 1000, y: 180, type: 'ring', h: 60 }, // Mid-air orb 1
+        { x: 1350, y: 280, type: 'block', w: 140, h: 20 },
+        { x: 1600, y: 280, type: 'ring', h: 60 }, // Mid-air orb 2
+        { x: 1950, y: 380, type: 'block', w: 160, h: 20 },
+        { x: 2600, y: 0, type: 'spike' },
+        { x: 2650, y: 0, type: 'spike' },
+        { x: 3100, y: 0, type: 'pad' },
     ]);
-    curX += 2900;
+    curX += 3600;
 
     transitions.push({ x: curX, mode: MODES.SHIP });
     curX += 1000;
 
-    for (let i = 0; i < 8; i++) {
-        let yCenter = 300 + Math.sin(i * 0.6) * 100;
+    // SHIP MODE: Narrow fly-throughs & obstacles at varying heights
+    for (let i = 0; i < 6; i++) {
+        let yCenter = 300 + Math.sin(i * 0.9) * 110;
         addSection(curX + i * 850, [
-            { x: 0, y: 0, type: 'block', w: 150, h: Math.max(0, yCenter - 140) },
-            { x: 0, y: yCenter + 140, type: 'block', w: 150, h: Math.max(0, 600 - (yCenter + 140)) },
-            { x: 450, y: yCenter - 140, type: 'spike' }
+            { x: 0, y: 0, type: 'block', w: 150, h: Math.max(0, yCenter - 110) },
+            { x: 0, y: yCenter + 110, type: 'block', w: 150, h: Math.max(0, 600 - (yCenter + 110)) },
+            { x: 450, y: yCenter - 110, type: 'spike' }
         ]);
     }
-    curX += 7100;
+    curX += 5400;
 
     transitions.push({ x: curX, mode: MODES.BALL });
     curX += 1000;
 
+    // BALL MODE: Precision gravity switching, floor/ceiling spikes
     for (let i = 0; i < 6; i++) {
         let isFloor = (i % 2 === 0);
         addSection(curX + i * 1100, [
-            { x: 300, y: isFloor ? 0 : 550, type: 'spike' },
-            { x: 800, y: isFloor ? 550 : 0, type: 'block', w: 150, h: 50 }
+            { x: 400, y: isFloor ? 0 : 550, type: 'spike' },
+            { x: 900, y: isFloor ? 0 : 550, type: 'spike' }
         ]);
     }
     curX += 7000;
@@ -222,142 +221,129 @@ function buildLevel1() {
     transitions.push({ x: curX, mode: MODES.UFO });
     curX += 1000;
 
-    for (let i = 0; i < 6; i++) {
+    // UFO MODE: Flappy multi-tier jumps with mid-air Orbs
+    for (let i = 0; i < 5; i++) {
         addSection(curX + i * 900, [
             { x: 0, y: 0, type: 'spike' },
-            { x: 300, y: 150, type: 'block', w: 120, h: 20 },
+            { x: 300, y: 150 + (i % 2) * 80, type: 'block', w: 120, h: 20 },
             { x: 600, y: 0, type: 'spike' },
             { x: 600, y: 550, type: 'spike' },
             { x: 750, y: 250, type: 'ring', h: 40 }
         ]);
     }
-    curX += 5800;
+    curX += 5000;
 
     transitions.push({ x: curX, mode: MODES.WAVE });
     curX += 1000;
 
-    for (let i = 0; i < 8; i++) {
+    // WAVE MODE: Fast diagonal slalom corridors (~90px gap)
+    for (let i = 0; i < 6; i++) {
         let isTop = (i % 2 === 0);
         addSection(curX + i * 850, [
-            { x: 0, y: isTop ? 320 : 0, type: 'block', w: 250, h: 180 },
-            { x: 500, y: isTop ? 0 : 550, type: 'spike' }
+            { x: 0, y: isTop ? 310 : 0, type: 'block', w: 260, h: 190 },
+            { x: 450, y: isTop ? 0 : 500, type: 'spike' }
         ]);
     }
-    curX += 7100;
-
-    transitions.push({ x: curX, mode: MODES.CUBE });
-    curX += 1000;
-    addSection(curX, [
-        { x: 300, y: 0, type: 'pad' },
-        { x: 800, y: 0, type: 'pad' },
-        { x: 1300, y: 0, type: 'pad' },
-        { x: 1700, y: 200, type: 'ring', h: 40 },
-        { x: 2100, y: 200, type: 'ring', h: 40 },
-        { x: 2500, y: 0, type: 'spike' },
-        { x: 2900, y: 0, type: 'spike' },
-    ]);
-    curX += 3400;
+    curX += 5500;
     totalLevelLength = curX + 1000;
 }
 
-// LEVEL 2 BUILDER
+// LEVEL 2 BUILDER (ACID DISTRICT - DEMON, Speed 10.5)
 function buildLevel2() {
     let curX = 1200;
 
+    // BALL MODE START: Rapid ceiling/floor flips with floor/ceiling spikes
     for (let i = 0; i < 6; i++) {
         let isFloor = (i % 2 === 0);
-        addSection(curX + i * 1100, [
-            { x: 300, y: isFloor ? 0 : 550, type: 'spike' },
-            { x: 800, y: isFloor ? 550 : 0, type: 'block', w: 150, h: 50 }
+        addSection(curX + i * 1200, [
+            { x: 450, y: isFloor ? 0 : 550, type: 'spike' },
+            { x: 950, y: isFloor ? 550 : 0, type: 'spike' }
         ]);
     }
-    curX += 7000;
+    curX += 7500;
 
     transitions.push({ x: curX, mode: MODES.CUBE });
     curX += 1000;
 
+    // CUBE MODE: Fast staircase jump platforms + orb chains
     addSection(curX, [
         { x: 300, y: 0, type: 'pad' },
-        { x: 700, y: 140, type: 'block', w: 120, h: 20 },
-        { x: 1000, y: 140, type: 'ring', h: 50 },
-        { x: 1300, y: 220, type: 'block', w: 120, h: 20 },
-        { x: 1700, y: 0, type: 'spike' },
-        { x: 2100, y: 0, type: 'spike' },
+        { x: 800, y: 200, type: 'block', w: 140, h: 20 },
+        { x: 1100, y: 200, type: 'ring', h: 60 },
+        { x: 1450, y: 320, type: 'block', w: 140, h: 20 },
+        { x: 1750, y: 320, type: 'ring', h: 60 },
+        { x: 2150, y: 0, type: 'spike' },
+        { x: 2200, y: 0, type: 'spike' },
     ]);
-    curX += 2600;
+    curX += 2800;
 
     transitions.push({ x: curX, mode: MODES.WAVE });
     curX += 1000;
 
-    for (let i = 0; i < 8; i++) {
+    // WAVE MODE: Tight Demon Slalom
+    for (let i = 0; i < 6; i++) {
         let isTop = (i % 2 === 0);
-        addSection(curX + i * 850, [
-            { x: 0, y: isTop ? 320 : 0, type: 'block', w: 250, h: 180 },
-            { x: 500, y: isTop ? 0 : 550, type: 'spike' }
+        addSection(curX + i * 950, [
+            { x: 0, y: isTop ? 310 : 0, type: 'block', w: 280, h: 190 },
+            { x: 550, y: isTop ? 0 : 520, type: 'spike' }
         ]);
     }
-    curX += 7100;
+    curX += 6200;
 
     transitions.push({ x: curX, mode: MODES.SHIP });
     curX += 1000;
 
-    for (let i = 0; i < 8; i++) {
-        let yCenter = 300 + Math.cos(i * 0.6) * 100;
-        addSection(curX + i * 850, [
-            { x: 0, y: 0, type: 'block', w: 150, h: Math.max(0, yCenter - 140) },
-            { x: 0, y: yCenter + 140, type: 'block', w: 150, h: Math.max(0, 600 - (yCenter + 140)) },
-            { x: 450, y: yCenter - 140, type: 'spike' }
+    // SHIP MODE: Tight wave-like flying passages
+    for (let i = 0; i < 6; i++) {
+        let yCenter = 300 + Math.cos(i * 0.9) * 110;
+        addSection(curX + i * 950, [
+            { x: 0, y: 0, type: 'block', w: 160, h: Math.max(0, yCenter - 110) },
+            { x: 0, y: yCenter + 110, type: 'block', w: 160, h: Math.max(0, 600 - (yCenter + 110)) },
+            { x: 550, y: yCenter - 110, type: 'spike' }
         ]);
     }
-    curX += 7100;
+    curX += 6200;
 
     transitions.push({ x: curX, mode: MODES.UFO });
     curX += 1000;
 
-    for (let i = 0; i < 6; i++) {
-        addSection(curX + i * 900, [
+    // UFO MODE: Precision jump gaps
+    for (let i = 0; i < 5; i++) {
+        addSection(curX + i * 1000, [
             { x: 0, y: 0, type: 'spike' },
-            { x: 300, y: 150, type: 'block', w: 120, h: 20 },
-            { x: 600, y: 0, type: 'spike' },
-            { x: 750, y: 250, type: 'ring', h: 40 }
+            { x: 400, y: 160 + (i % 2) * 100, type: 'block', w: 130, h: 20 },
+            { x: 750, y: 0, type: 'spike' },
+            { x: 880, y: 260, type: 'ring', h: 40 }
         ]);
     }
-    curX += 5800;
-
-    transitions.push({ x: curX, mode: MODES.CUBE });
-    curX += 1000;
-
-    addSection(curX, [
-        { x: 300, y: 0, type: 'pad' },
-        { x: 800, y: 0, type: 'spike' },
-        { x: 1300, y: 0, type: 'spike' },
-    ]);
-    curX += 2000;
+    curX += 5500;
     totalLevelLength = curX + 1000;
 }
 
-// LEVEL 3 BUILDER
+// LEVEL 3 BUILDER (INDUSTRIAL HELL - EXTREME DEMON, Speed 12.0)
 function buildLevel3() {
     let curX = 1200;
 
-    for (let i = 0; i < 8; i++) {
+    // WAVE MODE START: Extreme Speed Wave Slalom
+    for (let i = 0; i < 6; i++) {
         let isTop = (i % 2 === 0);
-        addSection(curX + i * 850, [
-            { x: 0, y: isTop ? 320 : 0, type: 'block', w: 250, h: 180 },
-            { x: 500, y: isTop ? 0 : 550, type: 'spike' }
+        addSection(curX + i * 1050, [
+            { x: 0, y: isTop ? 320 : 0, type: 'block', w: 280, h: 180 },
+            { x: 600, y: isTop ? 0 : 540, type: 'spike' }
         ]);
     }
-    curX += 7100;
+    curX += 6800;
 
     transitions.push({ x: curX, mode: MODES.UFO });
     curX += 1000;
 
-    for (let i = 0; i < 6; i++) {
-        addSection(curX + i * 900, [
+    // UFO MODE: High Speed Precision Jumps
+    for (let i = 0; i < 5; i++) {
+        addSection(curX + i * 1050, [
             { x: 0, y: 0, type: 'spike' },
-            { x: 300, y: 150, type: 'block', w: 120, h: 20 },
-            { x: 600, y: 0, type: 'spike' },
-            { x: 750, y: 250, type: 'ring', h: 40 }
+            { x: 400, y: 180 + (i % 2) * 90, type: 'block', w: 140, h: 20 },
+            { x: 750, y: 0, type: 'spike' },
+            { x: 900, y: 270, type: 'ring', h: 40 }
         ]);
     }
     curX += 5800;
@@ -365,38 +351,43 @@ function buildLevel3() {
     transitions.push({ x: curX, mode: MODES.SHIP });
     curX += 1000;
 
-    for (let i = 0; i < 8; i++) {
-        let yCenter = 300 + Math.sin(i * 0.6) * 100;
-        addSection(curX + i * 850, [
-            { x: 0, y: 0, type: 'block', w: 150, h: Math.max(0, yCenter - 140) },
-            { x: 0, y: yCenter + 140, type: 'block', w: 150, h: Math.max(0, 600 - (yCenter + 140)) },
-            { x: 450, y: yCenter - 140, type: 'spike' }
+    // SHIP MODE: Fast tight tunnel navigation
+    for (let i = 0; i < 6; i++) {
+        let yCenter = 300 + Math.sin(i * 0.9) * 100;
+        addSection(curX + i * 1000, [
+            { x: 0, y: 0, type: 'block', w: 180, h: Math.max(0, yCenter - 110) },
+            { x: 0, y: yCenter + 110, type: 'block', w: 180, h: Math.max(0, 600 - (yCenter + 110)) },
+            { x: 600, y: yCenter - 110, type: 'spike' }
         ]);
     }
-    curX += 7100;
+    curX += 6500;
 
     transitions.push({ x: curX, mode: MODES.BALL });
     curX += 1000;
 
+    // BALL MODE: Extreme Speed Gravity Flips
     for (let i = 0; i < 6; i++) {
         let isFloor = (i % 2 === 0);
-        addSection(curX + i * 1100, [
-            { x: 300, y: isFloor ? 0 : 550, type: 'spike' },
-            { x: 800, y: isFloor ? 550 : 0, type: 'block', w: 150, h: 50 }
+        addSection(curX + i * 1250, [
+            { x: 450, y: isFloor ? 0 : 550, type: 'spike' },
+            { x: 950, y: isFloor ? 550 : 0, type: 'spike' }
         ]);
     }
-    curX += 7000;
+    curX += 7800;
 
     transitions.push({ x: curX, mode: MODES.CUBE });
     curX += 1000;
 
+    // CUBE MODE FINALE: High Speed Superjump Pad & Orb chain
     addSection(curX, [
-        { x: 300, y: 0, type: 'pad' },
-        { x: 800, y: 0, type: 'pad' },
-        { x: 1300, y: 0, type: 'spike' },
-        { x: 1700, y: 0, type: 'spike' },
+        { x: 350, y: 0, type: 'pad' },
+        { x: 900, y: 220, type: 'block', w: 150, h: 20 },
+        { x: 1250, y: 220, type: 'ring', h: 60 },
+        { x: 1650, y: 340, type: 'block', w: 150, h: 20 },
+        { x: 2050, y: 0, type: 'spike' },
+        { x: 2120, y: 0, type: 'spike' },
     ]);
-    curX += 2400;
+    curX += 3000;
     totalLevelLength = curX + 1000;
 }
 
@@ -405,6 +396,7 @@ function initLevel() {
     transitions = [];
     gameDistance = 0;
     const config = LEVEL_CONFIGS[currentLevelIdx];
+    currentSpeed = config.speed;
 
     player.mode = config.initialMode;
     player.color = config.playerColor;
@@ -509,7 +501,7 @@ function runBot() {
 
         for (let f = 0; f < frames; f++) {
             let simX = player.x;
-            let currentDist = gameDistance + (f + 1) * SPEED;
+            let currentDist = gameDistance + (f + 1) * currentSpeed;
 
             // Physics step simulation
             switch(player.mode) {
@@ -535,7 +527,7 @@ function runBot() {
                     simVy += GRAVITY;
                     break;
                 case MODES.WAVE:
-                    if (doJump) simVy = -SPEED * 1.3; else simVy = SPEED * 1.3;
+                    if (doJump) simVy = -currentSpeed * 1.3; else simVy = currentSpeed * 1.3;
                     break;
             }
 
@@ -620,10 +612,10 @@ function update() {
         return;
     }
 
-    gameDistance += SPEED;
+    gameDistance += currentSpeed;
 
     transitions.forEach(t => {
-        if (gameDistance >= t.x && gameDistance < t.x + SPEED) {
+        if (gameDistance >= t.x && gameDistance < t.x + currentSpeed) {
             player.mode = t.mode;
             transitionFlash = 1.0; screenShake = 15;
         }
@@ -654,7 +646,7 @@ function update() {
             player.velocityY += GRAVITY;
             break;
         case MODES.WAVE:
-            if (jumpPressed) player.velocityY = -SPEED * 1.3; else player.velocityY = SPEED * 1.3;
+            if (jumpPressed) player.velocityY = -currentSpeed * 1.3; else player.velocityY = currentSpeed * 1.3;
             player.rotation = jumpPressed ? -Math.PI/4 : Math.PI/4;
             break;
     }
@@ -743,7 +735,7 @@ function update() {
     // Enhanced player trail & mode-specific particle effects
     player.trail.push({ x: player.x, y: player.y, rotation: player.rotation, mode: player.mode, life: 1.0 });
     if (player.trail.length > 12) player.trail.shift();
-    player.trail.forEach(t => { t.x -= SPEED * 0.8; t.life -= 0.08; });
+    player.trail.forEach(t => { t.x -= currentSpeed * 0.8; t.life -= 0.08; });
 
     // Continuous trailing particles behind player
     if (gameState === 'PLAYING') {
@@ -752,13 +744,13 @@ function update() {
 
         if (Math.random() < 0.8) {
             let pColor = player.color;
-            let vx = -SPEED * (0.2 + Math.random() * 0.4);
+            let vx = -currentSpeed * (0.2 + Math.random() * 0.4);
             let vy = (Math.random() - 0.5) * 3;
             let size = Math.random() * 6 + 2;
 
             if (player.mode === MODES.SHIP) {
                 pColor = Math.random() > 0.5 ? '#ffaa00' : '#ff3300'; // Thruster flame
-                vx = -SPEED * 1.2;
+                vx = -currentSpeed * 1.2;
             } else if (player.mode === MODES.WAVE) {
                 pColor = '#ffffff';
                 size = Math.random() * 4 + 2;

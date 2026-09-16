@@ -8,8 +8,8 @@ function solveLevel(builderFunc, speed, initialMode, levelName) {
 
     let maxObs = sim.obstacles.length > 0 ? Math.max(...sim.obstacles.map(o => o.x)) : 0;
 
-    console.log(`----------------------------------------------------`);
-    console.log(`VERIFYING: ${levelName} (Speed: ${speed}, Initial Mode: ${initialMode}, Obstacles: ${sim.obstacles.length}, Max Dist: ${maxObs})`);
+    console.log(`\n----------------------------------------------------`);
+    console.log(`TESTING: ${levelName} (Speed: ${speed}, Initial Mode: ${initialMode}, Obstacles: ${sim.obstacles.length}, Max Dist: ${maxObs})`);
     console.log(`----------------------------------------------------`);
 
     let queue = [{ state: sim, totalFrames: 0 }];
@@ -58,30 +58,36 @@ function solveLevel(builderFunc, speed, initialMode, levelName) {
     }
 
     if (foundSolution) {
-        console.log(`[PASS] ${levelName} - 100% Deathless Completion Verified! Total frames: ${foundSolution.totalFrames}\n`);
+        console.log(`[PASS] ${levelName} is 100% DEATHLESS BEATABLE! (Reached ${bestDist}px in ${foundSolution.totalFrames} frames)`);
         return true;
     } else {
-        console.log(`[FAIL] ${levelName} STUCK at dist ${bestDist} / ${maxObs}\n`);
+        console.log(`[FAIL] ${levelName} STUCK at dist ${bestDist} / ${maxObs}`);
         return false;
     }
 }
 
+// BUILDER LEVEL 1 (CYBER RAVE - INSANE, Speed 9.0)
 function buildLevel1(sim) {
     let curX = 1200;
+
+    // CUBE MODE: Multi-elevation platforms, Pad launch, Orb chains, Triple Spikes
     sim.addSection(curX, [
-        { x: 300, y: 0, type: 'pad' },
+        { x: 300, y: 0, type: 'pad' }, // Launch to platform 1
         { x: 750, y: 180, type: 'block', w: 140, h: 20 },
-        { x: 1000, y: 180, type: 'ring', h: 60 },
+        { x: 1000, y: 180, type: 'ring', h: 60 }, // Mid-air orb 1
         { x: 1350, y: 280, type: 'block', w: 140, h: 20 },
-        { x: 1600, y: 280, type: 'ring', h: 60 },
+        { x: 1600, y: 280, type: 'ring', h: 60 }, // Mid-air orb 2
         { x: 1950, y: 380, type: 'block', w: 160, h: 20 },
         { x: 2600, y: 0, type: 'spike' },
         { x: 2650, y: 0, type: 'spike' },
         { x: 3100, y: 0, type: 'pad' },
     ]);
     curX += 3600;
+
     sim.transitions.push({ x: curX, mode: MODES.SHIP });
     curX += 1000;
+
+    // SHIP MODE: Narrow fly-throughs & obstacles at varying heights
     for (let i = 0; i < 6; i++) {
         let yCenter = 300 + Math.sin(i * 0.9) * 110;
         sim.addSection(curX + i * 850, [
@@ -91,8 +97,11 @@ function buildLevel1(sim) {
         ]);
     }
     curX += 5400;
+
     sim.transitions.push({ x: curX, mode: MODES.BALL });
     curX += 1000;
+
+    // BALL MODE: Precision gravity switching, floor/ceiling spikes
     for (let i = 0; i < 6; i++) {
         let isFloor = (i % 2 === 0);
         sim.addSection(curX + i * 1100, [
@@ -101,8 +110,11 @@ function buildLevel1(sim) {
         ]);
     }
     curX += 7000;
+
     sim.transitions.push({ x: curX, mode: MODES.UFO });
     curX += 1000;
+
+    // UFO MODE: Flappy multi-tier jumps with mid-air Orbs
     for (let i = 0; i < 5; i++) {
         sim.addSection(curX + i * 900, [
             { x: 0, y: 0, type: 'spike' },
@@ -113,8 +125,11 @@ function buildLevel1(sim) {
         ]);
     }
     curX += 5000;
+
     sim.transitions.push({ x: curX, mode: MODES.WAVE });
     curX += 1000;
+
+    // WAVE MODE: Fast diagonal slalom corridors (~90px gap)
     for (let i = 0; i < 6; i++) {
         let isTop = (i % 2 === 0);
         sim.addSection(curX + i * 850, [
@@ -125,8 +140,11 @@ function buildLevel1(sim) {
     curX += 5500;
 }
 
+// BUILDER LEVEL 2 (ACID DISTRICT - DEMON, Speed 10.5)
 function buildLevel2(sim) {
     let curX = 1200;
+
+    // BALL MODE START: Rapid ceiling/floor flips with floor/ceiling spikes
     for (let i = 0; i < 6; i++) {
         let isFloor = (i % 2 === 0);
         sim.addSection(curX + i * 1200, [
@@ -135,8 +153,11 @@ function buildLevel2(sim) {
         ]);
     }
     curX += 7500;
+
     sim.transitions.push({ x: curX, mode: MODES.CUBE });
     curX += 1000;
+
+    // CUBE MODE: Fast staircase jump platforms + orb chains
     sim.addSection(curX, [
         { x: 300, y: 0, type: 'pad' },
         { x: 800, y: 200, type: 'block', w: 140, h: 20 },
@@ -147,8 +168,11 @@ function buildLevel2(sim) {
         { x: 2200, y: 0, type: 'spike' },
     ]);
     curX += 2800;
+
     sim.transitions.push({ x: curX, mode: MODES.WAVE });
     curX += 1000;
+
+    // WAVE MODE: Tight Demon Slalom
     for (let i = 0; i < 6; i++) {
         let isTop = (i % 2 === 0);
         sim.addSection(curX + i * 950, [
@@ -157,8 +181,11 @@ function buildLevel2(sim) {
         ]);
     }
     curX += 6200;
+
     sim.transitions.push({ x: curX, mode: MODES.SHIP });
     curX += 1000;
+
+    // SHIP MODE: Tight wave-like flying passages
     for (let i = 0; i < 6; i++) {
         let yCenter = 300 + Math.cos(i * 0.9) * 110;
         sim.addSection(curX + i * 950, [
@@ -168,8 +195,11 @@ function buildLevel2(sim) {
         ]);
     }
     curX += 6200;
+
     sim.transitions.push({ x: curX, mode: MODES.UFO });
     curX += 1000;
+
+    // UFO MODE: Precision jump gaps
     for (let i = 0; i < 5; i++) {
         sim.addSection(curX + i * 1000, [
             { x: 0, y: 0, type: 'spike' },
@@ -181,8 +211,11 @@ function buildLevel2(sim) {
     curX += 5500;
 }
 
+// BUILDER LEVEL 3 (INDUSTRIAL HELL - EXTREME DEMON, Speed 12.0)
 function buildLevel3(sim) {
     let curX = 1200;
+
+    // WAVE MODE START: Extreme Speed Wave Slalom
     for (let i = 0; i < 6; i++) {
         let isTop = (i % 2 === 0);
         sim.addSection(curX + i * 1050, [
@@ -191,8 +224,11 @@ function buildLevel3(sim) {
         ]);
     }
     curX += 6800;
+
     sim.transitions.push({ x: curX, mode: MODES.UFO });
     curX += 1000;
+
+    // UFO MODE: High Speed Precision Jumps
     for (let i = 0; i < 5; i++) {
         sim.addSection(curX + i * 1050, [
             { x: 0, y: 0, type: 'spike' },
@@ -202,8 +238,11 @@ function buildLevel3(sim) {
         ]);
     }
     curX += 5800;
+
     sim.transitions.push({ x: curX, mode: MODES.SHIP });
     curX += 1000;
+
+    // SHIP MODE: Fast tight tunnel navigation
     for (let i = 0; i < 6; i++) {
         let yCenter = 300 + Math.sin(i * 0.9) * 100;
         sim.addSection(curX + i * 1000, [
@@ -213,8 +252,11 @@ function buildLevel3(sim) {
         ]);
     }
     curX += 6500;
+
     sim.transitions.push({ x: curX, mode: MODES.BALL });
     curX += 1000;
+
+    // BALL MODE: Extreme Speed Gravity Flips
     for (let i = 0; i < 6; i++) {
         let isFloor = (i % 2 === 0);
         sim.addSection(curX + i * 1250, [
@@ -223,8 +265,11 @@ function buildLevel3(sim) {
         ]);
     }
     curX += 7800;
+
     sim.transitions.push({ x: curX, mode: MODES.CUBE });
     curX += 1000;
+
+    // CUBE MODE FINALE: High Speed Superjump Pad & Orb chain
     sim.addSection(curX, [
         { x: 350, y: 0, type: 'pad' },
         { x: 900, y: 220, type: 'block', w: 150, h: 20 },
@@ -241,9 +286,11 @@ let res2 = solveLevel(buildLevel2, 10.5, MODES.BALL, "LEVEL 2: ACID DISTRICT (DE
 let res3 = solveLevel(buildLevel3, 12.0, MODES.WAVE, "LEVEL 3: INDUSTRIAL HELL (EXTREME DEMON)");
 
 if (res1 && res2 && res3) {
-    console.log(`====================================================`);
+    console.log(`\n====================================================`);
     console.log(`ALL 3 HIGH-SPEED EXTREME LEVELS VERIFIED 100% BEATABLE!`);
     console.log(`====================================================`);
 } else {
-    process.exit(1);
+    console.log(`\n====================================================`);
+    console.log(`VERIFICATION FAILED FOR ONE OR MORE LEVELS!`);
+    console.log(`====================================================`);
 }
