@@ -220,6 +220,7 @@ let jumpProcessed = false;
 
 window.addEventListener('keydown', (e) => {
     if (e.code === 'Space' || e.code === 'ArrowUp') {
+        e.preventDefault();
         if (gameState === 'PLAYING') {
             jumpPressed = true;
         }
@@ -229,8 +230,10 @@ window.addEventListener('keydown', (e) => {
         returnToLobby();
     }
 });
+
 window.addEventListener('keyup', (e) => {
     if (e.code === 'Space' || e.code === 'ArrowUp') {
+        e.preventDefault();
         jumpPressed = false;
         jumpProcessed = false;
     }
@@ -243,24 +246,40 @@ window.addEventListener('mousedown', (e) => {
         }
     }
 });
+
 window.addEventListener('mouseup', () => {
     jumpPressed = false;
     jumpProcessed = false;
 });
+
+// Remove focus from any active button so Space key isn't re-routed to buttons
+function blurActiveElement() {
+    if (document.activeElement && typeof document.activeElement.blur === 'function') {
+        document.activeElement.blur();
+    }
+}
 
 // UI Event Handling Setup
 function initUI() {
     updateCoinDisplays();
     updateThemeUI();
 
-    document.getElementById('themeToggleBtn').addEventListener('click', () => {
+    document.getElementById('themeToggleBtn').addEventListener('click', (e) => {
         isDarkTheme = !isDarkTheme;
         localStorage.setItem('gd_theme', isDarkTheme ? 'dark' : 'light');
         updateThemeUI();
+        blurActiveElement();
     });
 
-    document.getElementById('openShopBtn').addEventListener('click', openShop);
-    document.getElementById('closeShopBtn').addEventListener('click', closeShop);
+    document.getElementById('openShopBtn').addEventListener('click', (e) => {
+        openShop();
+        blurActiveElement();
+    });
+
+    document.getElementById('closeShopBtn').addEventListener('click', (e) => {
+        closeShop();
+        blurActiveElement();
+    });
 
     // Initial Best Scores
     LEVEL_CONFIGS.forEach((cfg, idx) => {
@@ -354,6 +373,7 @@ function renderSkinShopGrid() {
             } else {
                 alert('Not enough coins to buy this skin!');
             }
+            blurActiveElement();
         });
 
         grid.appendChild(card);
@@ -376,6 +396,7 @@ function updatePreviewBadge() {
 
 // Select level from lobby
 function selectLevel(idx) {
+    blurActiveElement();
     currentLevelIdx = idx;
     const config = LEVEL_CONFIGS[currentLevelIdx];
     currentSpeed = config.speed;
@@ -394,6 +415,7 @@ function selectLevel(idx) {
 }
 
 function returnToLobby() {
+    blurActiveElement();
     bgMusic.pause();
     gameState = 'LOBBY';
     document.getElementById('lobbyOverlay').classList.remove('hidden');
