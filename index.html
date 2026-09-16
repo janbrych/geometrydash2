@@ -5,9 +5,88 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Geometry Dash Clone</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="theme-light">
+    <!-- Game Canvas -->
     <canvas id="gameCanvas"></canvas>
+
+    <!-- Lobby UI Overlay -->
+    <div id="lobbyOverlay" class="lobby-container">
+        <!-- Top Navigation Header -->
+        <header class="lobby-header">
+            <div class="logo-group">
+                <span class="logo-icon">▲</span>
+                <h1 class="logo-title">GEOMETRY <span>DASH</span></h1>
+            </div>
+
+            <div class="header-actions">
+                <div class="coin-badge">
+                    <span class="coin-icon">$</span>
+                    <span id="lobbyCoinCount" class="coin-amount">0</span>
+                </div>
+                <button id="themeToggleBtn" class="btn-theme" title="Toggle Theme">
+                    <span id="themeIcon">🌙</span>
+                    <span id="themeLabel">Dark</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="lobby-main">
+            <!-- Left Side: Interactive Preview & Mode Selection -->
+            <section class="character-section">
+                <div class="preview-card">
+                    <div class="card-header">
+                        <span class="card-title">CHARACTER PREVIEW</span>
+                        <span id="selectedSkinBadge" class="skin-badge">CYBER CYAN</span>
+                    </div>
+                    <div class="preview-canvas-wrapper">
+                        <canvas id="previewCanvas" width="220" height="220"></canvas>
+                    </div>
+                    <p id="skinDescText" class="skin-description">The original cyber cube.</p>
+                </div>
+            </section>
+
+            <!-- Center / Actions Section -->
+            <section class="actions-section">
+                <button id="playBtn" class="btn-play">
+                    <span class="play-icon">▶</span>
+                    <span>PLAY GAME</span>
+                </button>
+                <div class="secondary-btns">
+                    <button id="openShopBtn" class="btn-secondary">
+                        <span class="btn-icon">🛒</span> SHOP
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Shop Modal Dialog -->
+        <div id="shopModal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>SKIN SHOP</h2>
+                    <div class="modal-header-right">
+                        <div class="coin-badge modal-coins">
+                            <span class="coin-icon">$</span>
+                            <span id="shopCoinCount" class="coin-amount">0</span>
+                        </div>
+                        <button id="closeShopBtn" class="btn-close">&times;</button>
+                    </div>
+                </div>
+                <div id="skinGrid" class="skin-grid">
+                    <!-- Dynamic Skin Cards Injected via JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- In-Game Pause / HUD Overlay -->
+    <div id="hudOverlay" class="hud-container hidden">
+        <button id="lobbyReturnBtn" class="btn-lobby-return">🏠 Lobby</button>
+    </div>
+
     <script src="game.js"></script>
 </body>
 </html>
