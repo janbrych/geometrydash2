@@ -220,6 +220,7 @@ let jumpProcessed = false;
 
 window.addEventListener('keydown', (e) => {
     if (e.code === 'Space' || e.code === 'ArrowUp') {
+        e.preventDefault();
         if (gameState === 'PLAYING') {
             jumpPressed = true;
         }
@@ -249,11 +250,18 @@ window.addEventListener('mouseup', () => {
 });
 
 // UI Event Handling Setup
+function blurActiveElement() {
+    if (document.activeElement && typeof document.activeElement.blur === 'function') {
+        document.activeElement.blur();
+    }
+}
+
 function initUI() {
     updateCoinDisplays();
     updateThemeUI();
 
     document.getElementById('themeToggleBtn').addEventListener('click', () => {
+        blurActiveElement();
         isDarkTheme = !isDarkTheme;
         localStorage.setItem('gd_theme', isDarkTheme ? 'dark' : 'light');
         updateThemeUI();
@@ -301,11 +309,13 @@ function updateLevelProgressUI(idx, percent) {
 }
 
 function openShop() {
+    blurActiveElement();
     document.getElementById('shopModal').classList.remove('hidden');
     renderSkinShopGrid();
 }
 
 function closeShop() {
+    blurActiveElement();
     document.getElementById('shopModal').classList.add('hidden');
 }
 
@@ -376,6 +386,7 @@ function updatePreviewBadge() {
 
 // Select level from lobby
 function selectLevel(idx) {
+    blurActiveElement();
     currentLevelIdx = idx;
     const config = LEVEL_CONFIGS[currentLevelIdx];
     currentSpeed = config.speed;
@@ -394,6 +405,7 @@ function selectLevel(idx) {
 }
 
 function returnToLobby() {
+    blurActiveElement();
     bgMusic.pause();
     gameState = 'LOBBY';
     document.getElementById('lobbyOverlay').classList.remove('hidden');
@@ -655,7 +667,9 @@ class Obstacle {
         if (this.collected) return false;
 
         const pBox = { x: p.x, y: p.y, width: p.width, height: p.height };
-        const oBox = { x: screenX, y: this.y, width: this.width, height: this.height };
+        const minY = Math.min(this.y, this.y + (this.height || 0));
+        const absHeight = Math.abs(this.height);
+        const oBox = { x: screenX, y: minY, width: this.width, height: absHeight };
 
         if (this.type === 'coin') {
             if (pBox.x < oBox.x + oBox.width &&
@@ -864,16 +878,68 @@ function update() {
     obstacles.forEach(obs => {
         let obsScreenX = obs.x - gameDistance;
         if (obsScreenX > -100 && obsScreenX < canvas.width + 100) {
-            if (obs.checkCollision(player, obsScreenX)) {
+            if (obs.type === 'block') {
+                const obsY = obs.y;
+                const obsH = Math.abs(obs.height);
+                const obsW = obs.width;
+
+                if (player.x + player.width > obsScreenX && player.x < obsScreenX + obsW) {
+                    // Standing on top of block (normal gravity)
+                    if (player.gravityDir === 1 &&
+                        player.y + player.height >= obsY &&
+                        player.y + player.height <= obsY + 25 &&
+                        player.velocityY >= 0) {
+                        player.y = obsY - player.height;
+                        player.velocityY = 0;
+                        player.isGrounded = true;
+                        player.coyoteCounter = COYOTE_TIME;
+                        if (player.mode === MODES.CUBE) {
+                            player.rotation = Math.round(player.rotation / (Math.PI / 2)) * (Math.PI / 2);
+                        }
+                        return;
+                    }
+                    // Attached to bottom of ceiling block (inverted gravity)
+                    else if (player.gravityDir === -1 &&
+                             player.y <= obsY + obsH &&
+                             player.y >= obsY + obsH - 25 &&
+                             player.velocityY <= 0) {
+                        player.y = obsY + obsH;
+                        player.velocityY = 0;
+                        player.isGrounded = true;
+                        player.coyoteCounter = COYOTE_TIME;
+                        return;
+                    }
+                    // Bouncing off bottom of block in normal gravity
+                    else if (player.gravityDir === 1 &&
+                             player.y <= obsY + obsH &&
+                             player.y >= obsY + obsH - 20 &&
+                             player.velocityY < 0) {
+                        player.y = obsY + obsH;
+                        player.velocityY = 0;
+                        return;
+                    }
+                }
+
+                // Side / fatal collision with block
+                const sideMargin = 8;
+                if (player.x + player.width > obsScreenX + sideMargin &&
+                    player.x < obsScreenX + obsW - sideMargin &&
+                    player.y + player.height > obsY + 5 &&
+                    player.y < obsY + obsH - 5) {
+                    handleDeath();
+                }
+            } else if (obs.checkCollision(player, obsScreenX)) {
                 if (obs.type === 'yellow_pad') {
                     player.velocityY = JUMP_FORCE * 1.3;
+                    player.isGrounded = false;
                     createSparks(player.x, player.y);
                 } else if (obs.type === 'yellow_ring') {
                     if (jumpPressed) {
                         player.velocityY = JUMP_FORCE;
+                        player.isGrounded = false;
                         createSparks(player.x, player.y);
                     }
-                } else if (obs.type === 'spike' || obs.type === 'block') {
+                } else if (obs.type === 'spike') {
                     handleDeath();
                 }
             }
