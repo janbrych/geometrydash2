@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geometry Dash - Level Editor</title>
+    <link rel="stylesheet" href="editor.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="editor-container">
+        <!-- Top Toolbar Header -->
+        <header class="editor-header">
+            <div class="header-left">
+                <span class="editor-title">GD EDITOR</span>
+                <input type="text" id="levelTitleInput" class="level-name-input" value="Custom Level 1" placeholder="Název levelu">
+                <a href="index.html" class="btn">🏠 Zpět do Hry</a>
+            </div>
+
+            <div class="header-center">
+                <button id="btnToolDraw" class="btn btn-primary active">✏️ Kreslit</button>
+                <button id="btnToolErase" class="btn">🧹 Mazat</button>
+                <button id="btnClearAll" class="btn">🗑️ Vymazat Vše</button>
+                <button id="btnGridToggle" class="btn">🌐 Mřížka [ZAP]</button>
+            </div>
+
+            <div class="header-right">
+                <button id="btnSaveDb" class="btn btn-success">💾 Uložit do DB</button>
+                <button id="btnOpenDb" class="btn">📁 Moje Levely</button>
+                <button id="btnExportJson" class="btn">📤 Export JSON</button>
+                <button id="btnImportJson" class="btn">📥 Import</button>
+                <button id="btnTestYourself" class="btn btn-warning">🎮 Test Yourself</button>
+                <button id="btnBotTest" class="btn btn-primary">🤖 20-Bot Suite</button>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <div class="editor-body">
+            <!-- Canvas Viewport -->
+            <div class="canvas-wrapper">
+                <canvas id="editorCanvas"></canvas>
+
+                <!-- Overlay Info -->
+                <div class="editor-info-overlay">
+                    <span>Posun: <strong>[Pravé tlačítko / Drag]</strong> nebo <strong>[Kolečko]</strong></span>
+                    <span>Zoom: <strong>[Kolečko s Ctrl]</strong> nebo tlačítka</span>
+                    <span>X: <strong id="cursorX">0</strong></span>
+                    <span>Objektů: <strong id="objectCount">0</strong></span>
+                </div>
+
+                <!-- Bot Suite Status Overlay -->
+                <div id="botStatusOverlay" class="bot-overlay-status hidden">
+                    <span class="bot-counter">🤖 Boti: <span id="aliveBotsCount">20</span>/20 živých</span>
+                    <span id="botProgressPercent">0%</span>
+                    <button id="btnStopBotTest" class="btn">Zastavit</button>
+                </div>
+            </div>
+
+            <!-- Right Sidebar Tool Palette -->
+            <aside class="tool-palette">
+                <!-- Objects Palette -->
+                <div class="palette-section-title">Překážky & Prvky</div>
+                <div class="palette-grid">
+                    <button class="item-btn active" data-type="block">
+                        <div class="item-icon" style="background:#111827; border:2px solid #00f0ff; width:24px; height:24px;"></div>
+                        <span class="item-label">Blok</span>
+                    </button>
+                    <button class="item-btn" data-type="spike">
+                        <div class="item-icon" style="color:#ff0055;">▲</div>
+                        <span class="item-label">Osten</span>
+                    </button>
+                    <button class="item-btn" data-type="spike_ceiling">
+                        <div class="item-icon" style="color:#ff0055;">▼</div>
+                        <span class="item-label">Strop Osten</span>
+                    </button>
+                    <button class="item-btn" data-type="yellow_pad">
+                        <div class="item-icon" style="background:#ffd700; width:24px; height:8px;"></div>
+                        <span class="item-label">Yellow Pad</span>
+                    </button>
+                    <button class="item-btn" data-type="yellow_ring">
+                        <div class="item-icon" style="border:2px solid #ffd700; border-radius:50%; width:20px; height:20px;"></div>
+                        <span class="item-label">Yellow Ring</span>
+                    </button>
+                    <button class="item-btn" data-type="coin">
+                        <div class="item-icon" style="background:#ffd700; border-radius:50%; width:20px; height:20px; color:#000; font-size:10px; font-weight:bold; display:flex; align-items:center; justify-content:center;">$</div>
+                        <span class="item-label">Mince</span>
+                    </button>
+                </div>
+
+                <!-- Game Mode Portals Palette -->
+                <div class="palette-section-title" style="margin-top: 16px;">Portály Změny Módu</div>
+                <div class="portals-grid">
+                    <button class="portal-btn" data-type="portal" data-mode="cube">
+                        <div class="portal-color-indicator" style="background: #00ff66; box-shadow:0 0 8px #00ff66;"></div>
+                        <span class="portal-btn-label">Cube</span>
+                    </button>
+                    <button class="portal-btn" data-type="portal" data-mode="ship">
+                        <div class="portal-color-indicator" style="background: #ff00aa; box-shadow:0 0 8px #ff00aa;"></div>
+                        <span class="portal-btn-label">Ship</span>
+                    </button>
+                    <button class="portal-btn" data-type="portal" data-mode="ball">
+                        <div class="portal-color-indicator" style="background: #ff2200; box-shadow:0 0 8px #ff2200;"></div>
+                        <span class="portal-btn-label">Ball</span>
+                    </button>
+                    <button class="portal-btn" data-type="portal" data-mode="ufo">
+                        <div class="portal-color-indicator" style="background: #ff9900; box-shadow:0 0 8px #ff9900;"></div>
+                        <span class="portal-btn-label">UFO</span>
+                    </button>
+                    <button class="portal-btn" data-type="portal" data-mode="wave">
+                        <div class="portal-color-indicator" style="background: #0099ff; box-shadow:0 0 8px #0099ff;"></div>
+                        <span class="portal-btn-label">Wave</span>
+                    </button>
+                </div>
+
+                <!-- Level Properties -->
+                <div class="palette-section-title" style="margin-top: 16px;">Nastavení Levelu</div>
+                <div class="settings-form">
+                    <div class="form-group">
+                        <label for="speedSelect">Rychlost Hry</label>
+                        <select id="speedSelect" class="form-control">
+                            <option value="9.0">1.0x (Cyber Rave)</option>
+                            <option value="10.5" selected>1.2x (Acid District)</option>
+                            <option value="12.0">1.4x (Industrial Hell)</option>
+                            <option value="14.0">1.6x (Extreme Demon)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="musicSelect">Hudební Doprovod</label>
+                        <select id="musicSelect" class="form-control">
+                            <option value="techno_level1.wav">Cyber Techno Track 1</option>
+                            <option value="techno_level2.wav" selected>Acid Techno Track 2</option>
+                            <option value="techno_level3.wav">Industrial Hell Track 3</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="levelLengthInput">Délka Levelu (px)</label>
+                        <input type="number" id="levelLengthInput" class="form-control" value="20000" step="1000" min="5000">
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- My Levels DB Modal -->
+    <div id="dbModal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title">Moje Uložené Levely v DB</h3>
+                <button id="btnCloseDbModal" class="btn-close">&times;</button>
+            </div>
+            <div id="dbLevelsList" class="modal-body">
+                <!-- Dynamically populated level items -->
+            </div>
+        </div>
+    </div>
+
+    <!-- File Input for JSON Import (hidden) -->
+    <input type="file" id="jsonFileInput" accept=".json" style="display: none;">
+
+    <script src="level_db.js"></script>
+    <script src="editor.js"></script>
+</body>
+</html>

@@ -21,6 +21,9 @@
             </div>
 
             <div class="header-actions">
+                <a href="editor.html" class="btn-theme" style="text-decoration: none; display: flex; align-items: center; gap: 6px; font-weight: 800; color: #00f0ff; border-color: #00f0ff;">
+                    <span>🛠️</span> LEVEL EDITOR
+                </a>
                 <div class="coin-badge">
                     <span class="coin-icon">🪙</span>
                     <span id="lobbyCoinCount" class="coin-amount">0</span>
@@ -53,7 +56,13 @@
 
             <!-- Right Side: Level Selection Cards -->
             <section class="levels-section">
-                <h2 class="section-title">SELECT TRACK</h2>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                    <h2 class="section-title" style="margin-bottom:0;">SELECT TRACK</h2>
+                    <button id="openCommunityBtn" class="btn-secondary" style="font-size: 0.85rem; padding: 6px 14px;">
+                        🌐 COMMUNITY LEVELS
+                    </button>
+                </div>
+
                 <div class="level-cards">
                     <div class="level-card" onclick="selectLevel(0)">
                         <div class="level-badge badge-cyber">INSANE • 1.2x SPEED</div>
@@ -113,6 +122,19 @@
                 </div>
             </div>
         </div>
+
+        <!-- Community Levels Modal Dialog -->
+        <div id="communityModal" class="modal-overlay hidden">
+            <div class="modal-content" style="max-width: 650px;">
+                <div class="modal-header">
+                    <h2>🌐 KOMUNITNÍ LEVELY</h2>
+                    <button id="closeCommunityBtn" class="btn-close">&times;</button>
+                </div>
+                <div id="communityLevelsList" style="padding: 20px; display: flex; flex-direction: column; gap: 12px; max-height: 60vh; overflow-y: auto;">
+                    <!-- Dynamic Community Level Cards -->
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- In-Game Pause / HUD Overlay -->
@@ -124,6 +146,7 @@
         </div>
     </div>
 
+    <script src="level_db.js"></script>
     <script src="game.js"></script>
 </body>
 </html>
