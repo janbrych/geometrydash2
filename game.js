@@ -218,8 +218,15 @@ let transitionFlash = 0;
 let jumpPressed = false;
 let jumpProcessed = false;
 
+function blurActiveElement() {
+    if (document.activeElement && typeof document.activeElement.blur === 'function') {
+        document.activeElement.blur();
+    }
+}
+
 window.addEventListener('keydown', (e) => {
     if (e.code === 'Space' || e.code === 'ArrowUp') {
+        e.preventDefault();
         if (gameState === 'PLAYING') {
             jumpPressed = true;
         }
@@ -231,6 +238,7 @@ window.addEventListener('keydown', (e) => {
 });
 window.addEventListener('keyup', (e) => {
     if (e.code === 'Space' || e.code === 'ArrowUp') {
+        e.preventDefault();
         jumpPressed = false;
         jumpProcessed = false;
     }
@@ -254,13 +262,20 @@ function initUI() {
     updateThemeUI();
 
     document.getElementById('themeToggleBtn').addEventListener('click', () => {
+        blurActiveElement();
         isDarkTheme = !isDarkTheme;
         localStorage.setItem('gd_theme', isDarkTheme ? 'dark' : 'light');
         updateThemeUI();
     });
 
-    document.getElementById('openShopBtn').addEventListener('click', openShop);
-    document.getElementById('closeShopBtn').addEventListener('click', closeShop);
+    document.getElementById('openShopBtn').addEventListener('click', () => {
+        blurActiveElement();
+        openShop();
+    });
+    document.getElementById('closeShopBtn').addEventListener('click', () => {
+        blurActiveElement();
+        closeShop();
+    });
 
     // Initial Best Scores
     LEVEL_CONFIGS.forEach((cfg, idx) => {
@@ -337,6 +352,7 @@ function renderSkinShopGrid() {
         const actionBtn = card.querySelector('.btn-skin-action');
         actionBtn.addEventListener('click', (e) => {
             e.stopPropagation();
+            blurActiveElement();
             if (isUnlocked) {
                 equippedSkinId = skin.id;
                 localStorage.setItem('gd_equipped_skin', skin.id);
@@ -376,6 +392,7 @@ function updatePreviewBadge() {
 
 // Select level from lobby
 function selectLevel(idx) {
+    blurActiveElement();
     currentLevelIdx = idx;
     const config = LEVEL_CONFIGS[currentLevelIdx];
     currentSpeed = config.speed;
@@ -394,6 +411,7 @@ function selectLevel(idx) {
 }
 
 function returnToLobby() {
+    blurActiveElement();
     bgMusic.pause();
     gameState = 'LOBBY';
     document.getElementById('lobbyOverlay').classList.remove('hidden');
