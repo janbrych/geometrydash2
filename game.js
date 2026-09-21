@@ -218,8 +218,15 @@ let transitionFlash = 0;
 let jumpPressed = false;
 let jumpProcessed = false;
 
+function blurActiveElement() {
+    if (document.activeElement && document.activeElement.blur) {
+        document.activeElement.blur();
+    }
+}
+
 window.addEventListener('keydown', (e) => {
     if (e.code === 'Space' || e.code === 'ArrowUp') {
+        e.preventDefault();
         if (gameState === 'PLAYING') {
             jumpPressed = true;
         }
@@ -257,10 +264,17 @@ function initUI() {
         isDarkTheme = !isDarkTheme;
         localStorage.setItem('gd_theme', isDarkTheme ? 'dark' : 'light');
         updateThemeUI();
+        blurActiveElement();
     });
 
-    document.getElementById('openShopBtn').addEventListener('click', openShop);
-    document.getElementById('closeShopBtn').addEventListener('click', closeShop);
+    document.getElementById('openShopBtn').addEventListener('click', () => {
+        openShop();
+        blurActiveElement();
+    });
+    document.getElementById('closeShopBtn').addEventListener('click', () => {
+        closeShop();
+        blurActiveElement();
+    });
 
     // Initial Best Scores
     LEVEL_CONFIGS.forEach((cfg, idx) => {
@@ -376,6 +390,7 @@ function updatePreviewBadge() {
 
 // Select level from lobby
 function selectLevel(idx) {
+    blurActiveElement();
     currentLevelIdx = idx;
     const config = LEVEL_CONFIGS[currentLevelIdx];
     currentSpeed = config.speed;
