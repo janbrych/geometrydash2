@@ -214,6 +214,18 @@ let screenShake = 0;
 let deathFlash = 0;
 let transitionFlash = 0;
 
+let modeBannerText = '';
+let modeBannerColor = '#ffffff';
+let modeBannerTimer = 0;
+
+const MODE_INFO = {
+    [MODES.CUBE]: { name: 'CUBE MODE', icon: '🟩', color: '#00ff66' },
+    [MODES.SHIP]: { name: 'SHIP MODE', icon: '🚀', color: '#ff00aa' },
+    [MODES.BALL]: { name: 'BALL MODE', icon: '⚽', color: '#ff2222' },
+    [MODES.UFO]: { name: 'UFO MODE', icon: '🛸', color: '#ffaa00' },
+    [MODES.WAVE]: { name: 'WAVE MODE', icon: '⚡', color: '#00f0ff' }
+};
+
 // Input
 let jumpPressed = false;
 let jumpProcessed = false;
@@ -450,132 +462,273 @@ function resetGame() {
 // LEVEL BUILDERS
 function buildLevel1() {
     totalLevelLength = 50200;
-    // Section 1: CUBE
-    obstacles.push(new Obstacle('spike', 800));
-    obstacles.push(new Obstacle('spike', 1200));
-    obstacles.push(new Obstacle('block', 1500, 1, 1));
-    obstacles.push(new Obstacle('spike', 1500, 1, 1, true));
-    obstacles.push(new Obstacle('spike', 1900));
-    obstacles.push(new Obstacle('spike', 1935));
+    let curX = 1200;
 
-    // Floating staircase
-    obstacles.push(new Obstacle('block', 2400, 1, 1));
-    obstacles.push(new Obstacle('yellow_pad', 2405, 1));
-    obstacles.push(new Obstacle('block', 2800, 2, 1));
-    obstacles.push(new Obstacle('coin', 2810, 3));
-    obstacles.push(new Obstacle('yellow_ring', 3200, 3));
-    obstacles.push(new Obstacle('block', 3500, 1, 1));
+    // Part 1: Cube - Rhythmic Intro
+    obstacles.push(new Obstacle('spike', curX + 300));
+    obstacles.push(new Obstacle('spike', curX + 800));
+    obstacles.push(new Obstacle('block', curX + 1300, 1, 2.5));
+    obstacles.push(new Obstacle('block', curX + 1400, 2, 2.5));
+    obstacles.push(new Obstacle('spike', curX + 1800));
+    obstacles.push(new Obstacle('yellow_ring', curX + 2200, 2.5));
+    obstacles.push(new Obstacle('block', curX + 2400, 2.5, 3));
+    obstacles.push(new Obstacle('spike', curX + 2900));
+    obstacles.push(new Obstacle('spike', curX + 3300));
+    curX += 3800;
 
-    transitions.push({ distance: 4000, mode: MODES.SHIP });
+    // Part 2: Cube - Pads & Orbs Verticality
+    obstacles.push(new Obstacle('yellow_pad', curX + 300, 1));
+    obstacles.push(new Obstacle('block', curX + 700, 3.5, 3));
+    obstacles.push(new Obstacle('yellow_ring', curX + 1000, 3.5));
+    obstacles.push(new Obstacle('block', curX + 1300, 5.5, 3));
+    obstacles.push(new Obstacle('yellow_ring', curX + 1600, 5.5));
+    obstacles.push(new Obstacle('block', curX + 1900, 7.5, 3));
+    obstacles.push(new Obstacle('spike', curX + 2300));
+    curX += 2900;
 
-    // Section 2: SHIP
-    obstacles.push(new Obstacle('block', 4500, 1, 4));
-    obstacles.push(new Obstacle('block', 4500, 7, 3));
-    obstacles.push(new Obstacle('coin', 4800, 5));
-    obstacles.push(new Obstacle('block', 5200, 1, 3));
-    obstacles.push(new Obstacle('block', 5200, 6, 4));
+    // Transition to Ship
+    transitions.push({ distance: curX, mode: MODES.SHIP });
+    curX += 1000;
 
-    transitions.push({ distance: 6000, mode: MODES.BALL });
+    // Part 3: Ship - Cavern
+    for (let i = 0; i < 10; i++) {
+        let yCenterUnits = 3.5 + Math.sin(i * 0.6) * 1.5;
+        let gapTop = yCenterUnits + 2.5;
+        let gapBottom = Math.max(0, yCenterUnits - 2.5);
 
-    // Section 3: BALL
-    obstacles.push(new Obstacle('spike', 6500));
-    obstacles.push(new Obstacle('spike', 6500, 9, 1, false, true));
-    obstacles.push(new Obstacle('block', 7000, 1, 3));
-    obstacles.push(new Obstacle('yellow_ring', 7300, 4));
-    obstacles.push(new Obstacle('block', 7600, 7, 3));
+        if (gapBottom > 0) {
+            obstacles.push(new Obstacle('block', curX + i * 850, gapBottom, 3.75));
+        }
+        let topHeight = Math.max(0, 12 - gapTop);
+        if (topHeight > 0) {
+            obstacles.push(new Obstacle('block', curX + i * 850, topHeight, 3.75, false, true));
+        }
+        if (i % 2 === 1) {
+            obstacles.push(new Obstacle('coin', curX + i * 850 + 200, yCenterUnits));
+        }
+    }
+    curX += 8800;
 
-    transitions.push({ distance: 8000, mode: MODES.UFO });
+    // Transition to Ball
+    transitions.push({ distance: curX, mode: MODES.BALL });
+    curX += 1000;
 
-    // Section 4: UFO
-    obstacles.push(new Obstacle('block', 8500, 1, 3));
-    obstacles.push(new Obstacle('block', 8500, 6, 4));
-    obstacles.push(new Obstacle('coin', 8800, 4));
-    obstacles.push(new Obstacle('yellow_ring', 9200, 5));
+    // Part 4: Ball - Gravity Corridors
+    for (let i = 0; i < 8; i++) {
+        let isFloor = (i % 2 === 0);
+        if (isFloor) {
+            obstacles.push(new Obstacle('spike', curX + i * 1100 + 300));
+            obstacles.push(new Obstacle('block', curX + i * 1100 + 800, 1.25, 3.75, false, true));
+        } else {
+            obstacles.push(new Obstacle('spike', curX + i * 1100 + 300, 1, 1, false, true));
+            obstacles.push(new Obstacle('block', curX + i * 1100 + 800, 1.25, 3.75));
+        }
+        if (i % 3 === 0) {
+            obstacles.push(new Obstacle('coin', curX + i * 1100 + 550, 4.5));
+        }
+    }
+    curX += 9200;
 
-    transitions.push({ distance: 10000, mode: MODES.WAVE });
+    // Transition to UFO
+    transitions.push({ distance: curX, mode: MODES.UFO });
+    curX += 1000;
 
-    // Section 5: WAVE
-    obstacles.push(new Obstacle('block', 10500, 1, 4));
-    obstacles.push(new Obstacle('block', 10500, 7, 3));
-    obstacles.push(new Obstacle('block', 11200, 1, 3));
-    obstacles.push(new Obstacle('block', 11200, 6, 4));
+    // Part 5: UFO - Rhythmic Bounces
+    for (let i = 0; i < 8; i++) {
+        obstacles.push(new Obstacle('spike', curX + i * 900));
+        obstacles.push(new Obstacle('block', curX + i * 900 + 300, 3.75, 3));
+        obstacles.push(new Obstacle('spike', curX + i * 900 + 600));
+        obstacles.push(new Obstacle('spike', curX + i * 900 + 600, 1, 1, false, true));
+        obstacles.push(new Obstacle('yellow_ring', curX + i * 900 + 750, 4));
+    }
+    curX += 7600;
 
-    transitions.push({ distance: 12000, mode: MODES.CUBE });
+    // Transition to Wave
+    transitions.push({ distance: curX, mode: MODES.WAVE });
+    curX += 1000;
 
-    // Final stretch
-    obstacles.push(new Obstacle('yellow_pad', 12300, 1));
-    obstacles.push(new Obstacle('yellow_ring', 12700, 4));
-    obstacles.push(new Obstacle('spike', 13100));
+    // Part 6: Wave - Open Slalom
+    for (let i = 0; i < 10; i++) {
+        let isTop = (i % 2 === 0);
+        if (isTop) {
+            obstacles.push(new Obstacle('block', curX + i * 850, 4.5, 6.25));
+            obstacles.push(new Obstacle('spike', curX + i * 850 + 500));
+        } else {
+            obstacles.push(new Obstacle('block', curX + i * 850, 4.5, 6.25, false, true));
+            obstacles.push(new Obstacle('spike', curX + i * 850 + 500, 1, 1, false, true));
+        }
+    }
+    curX += 8800;
+
+    // Transition back to Cube - Final Sprint
+    transitions.push({ distance: curX, mode: MODES.CUBE });
+    curX += 1000;
+    obstacles.push(new Obstacle('yellow_pad', curX + 300, 1));
+    obstacles.push(new Obstacle('yellow_pad', curX + 800, 1));
+    obstacles.push(new Obstacle('yellow_pad', curX + 1300, 1));
+    obstacles.push(new Obstacle('yellow_ring', curX + 1700, 3.5));
+    obstacles.push(new Obstacle('yellow_ring', curX + 2100, 3.5));
+    obstacles.push(new Obstacle('spike', curX + 2500));
+    obstacles.push(new Obstacle('spike', curX + 2900));
+    curX += 3400;
 }
 
 function buildLevel2() {
     totalLevelLength = 50200;
-    // BALL
-    obstacles.push(new Obstacle('spike', 800));
-    obstacles.push(new Obstacle('spike', 1200, 9, 1, false, true));
-    obstacles.push(new Obstacle('yellow_ring', 1600, 4));
-    obstacles.push(new Obstacle('block', 2000, 1, 2));
-    obstacles.push(new Obstacle('coin', 2010, 3));
+    let curX = 1200;
 
-    transitions.push({ distance: 2500, mode: MODES.CUBE });
+    // Part 1: Ball
+    for (let i = 0; i < 6; i++) {
+        let isFloor = (i % 2 === 0);
+        if (isFloor) {
+            obstacles.push(new Obstacle('spike', curX + i * 1100 + 300));
+            obstacles.push(new Obstacle('block', curX + i * 1100 + 800, 1.25, 3.75, false, true));
+        } else {
+            obstacles.push(new Obstacle('spike', curX + i * 1100 + 300, 1, 1, false, true));
+            obstacles.push(new Obstacle('block', curX + i * 1100 + 800, 1.25, 3.75));
+        }
+    }
+    curX += 7000;
 
-    // CUBE
-    obstacles.push(new Obstacle('yellow_pad', 2800, 1));
-    obstacles.push(new Obstacle('yellow_ring', 3200, 4));
-    obstacles.push(new Obstacle('block', 3600, 2, 2));
+    // Transition to Cube
+    transitions.push({ distance: curX, mode: MODES.CUBE });
+    curX += 1000;
 
-    transitions.push({ distance: 4000, mode: MODES.WAVE });
+    // Part 2: Cube
+    obstacles.push(new Obstacle('yellow_pad', curX + 300, 1));
+    obstacles.push(new Obstacle('block', curX + 700, 3.5, 3));
+    obstacles.push(new Obstacle('yellow_ring', curX + 1000, 3.5));
+    obstacles.push(new Obstacle('block', curX + 1300, 5.5, 3));
+    curX += 6000;
 
-    // WAVE
-    obstacles.push(new Obstacle('block', 4500, 1, 4));
-    obstacles.push(new Obstacle('block', 4500, 7, 3));
-    obstacles.push(new Obstacle('coin', 4800, 5));
+    // Transition to Wave
+    transitions.push({ distance: curX, mode: MODES.WAVE });
+    curX += 1000;
 
-    transitions.push({ distance: 5500, mode: MODES.SHIP });
+    // Part 3: Wave
+    for (let i = 0; i < 10; i++) {
+        let isTop = (i % 2 === 0);
+        if (isTop) {
+            obstacles.push(new Obstacle('block', curX + i * 850, 4.5, 6.25));
+        } else {
+            obstacles.push(new Obstacle('block', curX + i * 850, 4.5, 6.25, false, true));
+        }
+    }
+    curX += 9000;
 
-    // SHIP
-    obstacles.push(new Obstacle('block', 6000, 1, 3));
-    obstacles.push(new Obstacle('block', 6000, 6, 4));
+    // Transition to Ship
+    transitions.push({ distance: curX, mode: MODES.SHIP });
+    curX += 1000;
 
-    transitions.push({ distance: 7500, mode: MODES.UFO });
+    // Part 4: Ship
+    for (let i = 0; i < 10; i++) {
+        let yCenterUnits = 3.5 + Math.sin(i * 0.6) * 1.5;
+        let gapTop = yCenterUnits + 2.5;
+        let gapBottom = Math.max(0, yCenterUnits - 2.5);
 
-    // UFO
-    obstacles.push(new Obstacle('yellow_ring', 8000, 4));
-    obstacles.push(new Obstacle('yellow_ring', 8400, 6));
-    obstacles.push(new Obstacle('spike', 8900));
+        if (gapBottom > 0) {
+            obstacles.push(new Obstacle('block', curX + i * 850, gapBottom, 3.75));
+        }
+        let topHeight = Math.max(0, 12 - gapTop);
+        if (topHeight > 0) {
+            obstacles.push(new Obstacle('block', curX + i * 850, topHeight, 3.75, false, true));
+        }
+    }
+    curX += 9000;
+
+    // Transition to UFO
+    transitions.push({ distance: curX, mode: MODES.UFO });
+    curX += 1000;
+
+    // Part 5: UFO
+    for (let i = 0; i < 8; i++) {
+        obstacles.push(new Obstacle('spike', curX + i * 900));
+        obstacles.push(new Obstacle('block', curX + i * 900 + 300, 3.75, 3));
+        obstacles.push(new Obstacle('yellow_ring', curX + i * 900 + 750, 4));
+    }
+    curX += 8000;
+
+    // Transition to Cube
+    transitions.push({ distance: curX, mode: MODES.CUBE });
+    curX += 1000;
+    obstacles.push(new Obstacle('yellow_pad', curX + 300, 1));
+    obstacles.push(new Obstacle('yellow_pad', curX + 800, 1));
+    obstacles.push(new Obstacle('spike', curX + 1300));
 }
 
 function buildLevel3() {
     totalLevelLength = 50200;
-    // WAVE
-    obstacles.push(new Obstacle('block', 800, 1, 4));
-    obstacles.push(new Obstacle('block', 800, 7, 3));
-    obstacles.push(new Obstacle('coin', 1200, 5));
+    let curX = 1200;
 
-    transitions.push({ distance: 1600, mode: MODES.UFO });
+    // Part 1: Wave
+    for (let i = 0; i < 10; i++) {
+        let isTop = (i % 2 === 0);
+        if (isTop) {
+            obstacles.push(new Obstacle('block', curX + i * 850, 4.5, 6.25));
+        } else {
+            obstacles.push(new Obstacle('block', curX + i * 850, 4.5, 6.25, false, true));
+        }
+    }
+    curX += 9000;
 
-    // UFO
-    obstacles.push(new Obstacle('yellow_ring', 2000, 4));
-    obstacles.push(new Obstacle('yellow_ring', 2400, 6));
+    // Transition to UFO
+    transitions.push({ distance: curX, mode: MODES.UFO });
+    curX += 1000;
 
-    transitions.push({ distance: 2800, mode: MODES.SHIP });
+    // Part 2: UFO
+    for (let i = 0; i < 8; i++) {
+        obstacles.push(new Obstacle('spike', curX + i * 900));
+        obstacles.push(new Obstacle('block', curX + i * 900 + 300, 3.75, 3));
+        obstacles.push(new Obstacle('yellow_ring', curX + i * 900 + 750, 4));
+    }
+    curX += 8000;
 
-    // SHIP
-    obstacles.push(new Obstacle('block', 3200, 1, 3));
-    obstacles.push(new Obstacle('block', 3200, 6, 4));
+    // Transition to Ship
+    transitions.push({ distance: curX, mode: MODES.SHIP });
+    curX += 1000;
 
-    transitions.push({ distance: 4000, mode: MODES.BALL });
+    // Part 3: Ship
+    for (let i = 0; i < 10; i++) {
+        let yCenterUnits = 3.5 + Math.sin(i * 0.6) * 1.5;
+        let gapTop = yCenterUnits + 2.5;
+        let gapBottom = Math.max(0, yCenterUnits - 2.5);
 
-    // BALL
-    obstacles.push(new Obstacle('spike', 4400));
-    obstacles.push(new Obstacle('yellow_ring', 4800, 4));
+        if (gapBottom > 0) {
+            obstacles.push(new Obstacle('block', curX + i * 850, gapBottom, 3.75));
+        }
+        let topHeight = Math.max(0, 12 - gapTop);
+        if (topHeight > 0) {
+            obstacles.push(new Obstacle('block', curX + i * 850, topHeight, 3.75, false, true));
+        }
+    }
+    curX += 9000;
 
-    transitions.push({ distance: 5200, mode: MODES.CUBE });
+    // Transition to Ball
+    transitions.push({ distance: curX, mode: MODES.BALL });
+    curX += 1000;
 
-    // CUBE
-    obstacles.push(new Obstacle('yellow_pad', 5500, 1));
-    obstacles.push(new Obstacle('yellow_ring', 5900, 4));
-    obstacles.push(new Obstacle('spike', 6300));
+    // Part 4: Ball
+    for (let i = 0; i < 6; i++) {
+        let isFloor = (i % 2 === 0);
+        if (isFloor) {
+            obstacles.push(new Obstacle('spike', curX + i * 1100 + 300));
+            obstacles.push(new Obstacle('block', curX + i * 1100 + 800, 1.25, 3.75, false, true));
+        } else {
+            obstacles.push(new Obstacle('spike', curX + i * 1100 + 300, 1, 1, false, true));
+            obstacles.push(new Obstacle('block', curX + i * 1100 + 800, 1.25, 3.75));
+        }
+    }
+    curX += 7000;
+
+    // Transition to Cube
+    transitions.push({ distance: curX, mode: MODES.CUBE });
+    curX += 1000;
+
+    // Part 5: Cube
+    obstacles.push(new Obstacle('yellow_pad', curX + 300, 1));
+    obstacles.push(new Obstacle('yellow_pad', curX + 800, 1));
+    obstacles.push(new Obstacle('yellow_ring', curX + 1300, 3.5));
+    obstacles.push(new Obstacle('spike', curX + 1800));
 }
 
 // Obstacle Constructor Class
@@ -793,6 +946,10 @@ function update() {
             if (player.mode !== tr.mode) {
                 player.mode = tr.mode;
                 transitionFlash = 1.0;
+                const info = MODE_INFO[tr.mode] || { name: tr.mode.toUpperCase() + ' MODE', color: '#ffffff' };
+                modeBannerText = info.name;
+                modeBannerColor = info.color;
+                modeBannerTimer = 80;
             }
         }
     });
@@ -963,6 +1120,9 @@ function draw() {
         }
     });
 
+    // Render Mode Transition Portals
+    drawPortals();
+
     // Draw Player Trail
     const skin = getEquippedSkinObj();
     ctx.strokeStyle = skin.color;
@@ -980,24 +1140,7 @@ function draw() {
     // Draw Player
     ctx.save();
     ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
-    ctx.rotate(player.rotation);
-
-    ctx.fillStyle = skin.color;
-    ctx.strokeStyle = skin.secondaryColor;
-    ctx.lineWidth = 3;
-    ctx.shadowColor = skin.color;
-    ctx.shadowBlur = 12;
-
-    ctx.fillRect(-player.width / 2, -player.height / 2, player.width, player.height);
-    ctx.strokeRect(-player.width / 2, -player.height / 2, player.width, player.height);
-
-    // Inner Face details
-    ctx.fillStyle = '#000';
-    ctx.fillRect(-8, -8, 5, 5);
-    ctx.fillRect(3, -8, 5, 5);
-    ctx.fillRect(-6, 4, 12, 3);
-
-    ctx.shadowBlur = 0;
+    drawPlayerShape(ctx, player.mode, player.width, player.height, player.rotation, skin, jumpPressed);
     ctx.restore();
 
     ctx.restore(); // Screen shake restore
@@ -1014,6 +1157,245 @@ function draw() {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         deathFlash -= 0.1;
     }
+
+    // Render Next Mode HUD & Transition Banner
+    drawHUDModeIndicators();
+}
+
+function drawPortals() {
+    transitions.forEach(tr => {
+        let screenX = tr.distance - gameDistance;
+        if (screenX > -100 && screenX < canvas.width + 100) {
+            const info = MODE_INFO[tr.mode] || { color: '#00f0ff', icon: '🌀' };
+            const portalY = CEILING_HEIGHT;
+            const portalH = canvas.height - GROUND_HEIGHT - CEILING_HEIGHT;
+            const portalW = 44;
+
+            ctx.save();
+            ctx.shadowColor = info.color;
+            ctx.shadowBlur = 20;
+
+            // Outer portal capsule
+            ctx.strokeStyle = info.color;
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.roundRect(screenX - portalW / 2, portalY + 10, portalW, portalH - 20, 20);
+            ctx.stroke();
+
+            // Inner glowing core line
+            ctx.fillStyle = info.color;
+            ctx.globalAlpha = 0.2 + Math.sin(Date.now() / 150) * 0.1;
+            ctx.beginPath();
+            ctx.roundRect(screenX - portalW / 2 + 6, portalY + 16, portalW - 12, portalH - 32, 14);
+            ctx.fill();
+
+            // Center mode icon
+            ctx.globalAlpha = 1.0;
+            ctx.font = 'bold 24px Outfit';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(info.icon, screenX, portalY + portalH / 2);
+
+            ctx.restore();
+        }
+    });
+}
+
+function drawHUDModeIndicators() {
+    if (gameState !== 'PLAYING') return;
+
+    // 1. Next Mode Warning Indicator
+    let nextTr = transitions.find(tr => tr.distance > gameDistance);
+    if (nextTr) {
+        let distLeft = nextTr.distance - gameDistance;
+        if (distLeft > 0 && distLeft < 2500) {
+            const info = MODE_INFO[nextTr.mode] || { name: 'NEXT MODE', icon: '🌀', color: '#00f0ff' };
+            let alpha = Math.min(1.0, (2500 - distLeft) / 1000);
+
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = 'rgba(18, 22, 38, 0.85)';
+            ctx.strokeStyle = info.color;
+            ctx.lineWidth = 2;
+            ctx.shadowColor = info.color;
+            ctx.shadowBlur = 12;
+
+            const boxW = 200;
+            const boxH = 40;
+            const boxX = canvas.width / 2 - boxW / 2;
+            const boxY = 30;
+
+            ctx.beginPath();
+            ctx.roundRect(boxX, boxY, boxW, boxH, 12);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = info.color;
+            ctx.font = '800 14px Outfit';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`NEXT: ${info.icon} ${info.name}`, canvas.width / 2, boxY + boxH / 2);
+
+            ctx.restore();
+        }
+    }
+
+    // 2. Mode Change Center Banner
+    if (modeBannerTimer > 0) {
+        let alpha = Math.min(1.0, modeBannerTimer / 30);
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.font = '900 36px Outfit';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = modeBannerColor;
+        ctx.shadowColor = modeBannerColor;
+        ctx.shadowBlur = 25;
+
+        ctx.fillText(modeBannerText, canvas.width / 2, canvas.height / 3);
+        ctx.restore();
+
+        modeBannerTimer--;
+    }
+}
+
+// Universal Player Drawing Function
+function drawPlayerShape(context, mode, width, height, rotation, skin, isThrusting = false) {
+    context.save();
+    context.rotate(rotation);
+
+    context.fillStyle = skin.color;
+    context.strokeStyle = skin.secondaryColor;
+    context.lineWidth = 3;
+    context.shadowColor = skin.color;
+    context.shadowBlur = 12;
+
+    const halfW = width / 2;
+    const halfH = height / 2;
+
+    if (mode === MODES.SHIP) {
+        // Ship / Rocket shape
+        context.beginPath();
+        context.moveTo(halfW + 6, 0); // Nose
+        context.lineTo(-halfW, -halfH + 4); // Top rear wing
+        context.lineTo(-halfW + 8, 0); // Engine recess
+        context.lineTo(-halfW, halfH - 4); // Bottom rear wing
+        context.closePath();
+        context.fill();
+        context.stroke();
+
+        // Cockpit glass
+        context.fillStyle = '#00ffff';
+        context.beginPath();
+        context.ellipse(2, -2, 8, 6, 0, 0, Math.PI * 2);
+        context.fill();
+
+        // Thruster flame at rear
+        const flameLen = isThrusting ? (12 + Math.random() * 8) : (6 + Math.random() * 4);
+        context.fillStyle = isThrusting ? '#ffcc00' : '#ff4400';
+        context.shadowColor = '#ff6600';
+        context.beginPath();
+        context.moveTo(-halfW + 6, -6);
+        context.lineTo(-halfW + 6 - flameLen, 0);
+        context.lineTo(-halfW + 6, 6);
+        context.closePath();
+        context.fill();
+
+    } else if (mode === MODES.BALL) {
+        // Ball / Rolling Orb shape
+        const radius = halfW;
+        context.beginPath();
+        context.arc(0, 0, radius, 0, Math.PI * 2);
+        context.fill();
+        context.stroke();
+
+        // Inner spinning spokes
+        context.strokeStyle = skin.secondaryColor;
+        context.lineWidth = 2;
+        context.beginPath();
+        context.moveTo(-radius + 4, 0); context.lineTo(radius - 4, 0);
+        context.moveTo(0, -radius + 4); context.lineTo(0, radius - 4);
+        context.stroke();
+
+        // Core glowing orb
+        context.fillStyle = '#ffffff';
+        context.beginPath();
+        context.arc(0, 0, radius * 0.35, 0, Math.PI * 2);
+        context.fill();
+
+    } else if (mode === MODES.UFO) {
+        // Flying Saucer shape
+        // Dome
+        context.fillStyle = skin.secondaryColor;
+        context.beginPath();
+        context.arc(0, -2, 14, Math.PI, 0);
+        context.fill();
+        context.stroke();
+
+        // Pilot face in dome
+        context.fillStyle = '#ffffff';
+        context.beginPath();
+        context.arc(0, -8, 5, 0, Math.PI * 2);
+        context.fill();
+
+        // Saucer rim
+        context.fillStyle = skin.color;
+        context.beginPath();
+        context.ellipse(0, 4, halfW + 4, 10, 0, 0, Math.PI * 2);
+        context.fill();
+        context.stroke();
+
+        // Bottom energy beam thruster
+        if (isThrusting) {
+            context.fillStyle = '#00ffff';
+            context.shadowColor = '#00ffff';
+            context.beginPath();
+            context.moveTo(-10, 12);
+            context.lineTo(0, 24 + Math.random() * 6);
+            context.lineTo(10, 12);
+            context.closePath();
+            context.fill();
+        }
+
+    } else if (mode === MODES.WAVE) {
+        // Sharp Dart / Arrowhead
+        context.beginPath();
+        context.moveTo(halfW + 8, 0);
+        context.lineTo(-halfW, -halfH);
+        context.lineTo(-halfW + 10, 0);
+        context.lineTo(-halfW, halfH);
+        context.closePath();
+        context.fill();
+        context.stroke();
+
+        // Inner glowing core
+        context.fillStyle = '#ffffff';
+        context.beginPath();
+        context.moveTo(halfW - 2, 0);
+        context.lineTo(-halfW + 10, -halfH + 10);
+        context.lineTo(-halfW + 10, halfH - 10);
+        context.closePath();
+        context.fill();
+
+    } else {
+        // MODES.CUBE
+        context.fillRect(-halfW, -halfH, width, height);
+        context.strokeRect(-halfW, -halfH, width, height);
+
+        // Inner square accent
+        context.strokeStyle = skin.secondaryColor;
+        context.lineWidth = 2;
+        context.strokeRect(-halfW + 6, -halfH + 6, width - 12, height - 12);
+
+        // Inner Face details
+        context.fillStyle = '#000';
+        context.fillRect(-8, -8, 5, 5);
+        context.fillRect(3, -8, 5, 5);
+        context.fillRect(-6, 4, 12, 3);
+    }
+
+    context.shadowBlur = 0;
+    context.restore();
 }
 
 // Character Preview Renderer for Lobby
@@ -1026,24 +1408,13 @@ function renderPreviewCanvas() {
     const skin = getEquippedSkinObj();
     const cx = prevCanvas.width / 2;
     const cy = prevCanvas.height / 2;
-    const size = 70;
 
     pCtx.save();
     pCtx.translate(cx, cy);
 
-    pCtx.fillStyle = skin.color;
-    pCtx.strokeStyle = skin.secondaryColor;
-    pCtx.lineWidth = 4;
-    pCtx.shadowColor = skin.color;
-    pCtx.shadowBlur = 16;
-
-    pCtx.fillRect(-size / 2, -size / 2, size, size);
-    pCtx.strokeRect(-size / 2, -size / 2, size, size);
-
-    pCtx.fillStyle = '#000';
-    pCtx.fillRect(-14, -14, 8, 8);
-    pCtx.fillRect(6, -14, 8, 8);
-    pCtx.fillRect(-10, 8, 20, 5);
+    const modesArr = [MODES.CUBE, MODES.SHIP, MODES.BALL, MODES.UFO, MODES.WAVE];
+    const previewMode = modesArr[Math.floor(Date.now() / 2500) % modesArr.length];
+    drawPlayerShape(pCtx, previewMode, 70, 70, 0, skin, true);
 
     pCtx.restore();
 }
