@@ -100,7 +100,7 @@ function buildCalculatedLevel(sim) {
     }
     curX += 8800;
 
-    // Transition back to Cube - Final Sprint
+    // Transition back to Cube - Extended Mid-Section
     sim.transitions.push({ x: curX, mode: MODES.CUBE });
     curX += 1000;
     sim.addSection(curX, [
@@ -113,6 +113,19 @@ function buildCalculatedLevel(sim) {
         { x: 2900, y: 0, type: 'spike' },
     ]);
     curX += 3400;
+
+    // Transition to Ship - Extended Final Sprint
+    sim.transitions.push({ x: curX, mode: MODES.SHIP });
+    curX += 1000;
+    for (let i = 0; i < 5; i++) {
+        let yCenter = 300 + Math.cos(i * 0.8) * 80;
+        sim.addSection(curX + i * 850, [
+            { x: 0, y: 0, type: 'block', w: 150, h: Math.max(0, yCenter - 140) },
+            { x: 0, y: yCenter + 140, type: 'block', w: 150, h: Math.max(0, 600 - (yCenter + 140)) },
+            { x: 450, y: yCenter - 140, type: 'spike' }
+        ]);
+    }
+    curX += 4500;
 }
 
 function runFullSolver() {

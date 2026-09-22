@@ -553,8 +553,8 @@ function buildCustomLevel(lvl) {
 
 // LEVEL BUILDERS FOR OFFICIAL TRACKS
 function buildLevel1() {
-    totalLevelLength = 50200;
-    // Section 1: CUBE
+    totalLevelLength = 75000;
+    // Section 1: CUBE Intro & Rhythmic Jumps
     obstacles.push(new Obstacle('spike', 800));
     obstacles.push(new Obstacle('spike', 1200));
     obstacles.push(new Obstacle('block', 1500, 1, 1));
@@ -562,65 +562,84 @@ function buildLevel1() {
     obstacles.push(new Obstacle('spike', 1900));
     obstacles.push(new Obstacle('spike', 1935));
 
-    // Floating staircase
+    // Floating staircase & Orbs
     obstacles.push(new Obstacle('block', 2400, 1, 1));
     obstacles.push(new Obstacle('yellow_pad', 2405, 1));
     obstacles.push(new Obstacle('block', 2800, 2, 1));
     obstacles.push(new Obstacle('coin', 2810, 3));
     obstacles.push(new Obstacle('yellow_ring', 3200, 3));
     obstacles.push(new Obstacle('block', 3500, 1, 1));
+    obstacles.push(new Obstacle('yellow_ring', 3800, 4));
 
-    // Colored Mode Portals
-    const p1 = new Obstacle('portal', 4000, 5, 1); p1.portalMode = MODES.SHIP; obstacles.push(p1);
-    transitions.push({ distance: 4000, mode: MODES.SHIP });
+    // Mode Portal: SHIP
+    const p1 = new Obstacle('portal', 4500, 5, 1); p1.portalMode = MODES.SHIP; obstacles.push(p1);
+    transitions.push({ distance: 4500, mode: MODES.SHIP });
 
-    // Section 2: SHIP
-    obstacles.push(new Obstacle('block', 4500, 1, 4));
-    obstacles.push(new Obstacle('block', 4500, 7, 3));
-    obstacles.push(new Obstacle('coin', 4800, 5));
-    obstacles.push(new Obstacle('block', 5200, 1, 3));
-    obstacles.push(new Obstacle('block', 5200, 6, 4));
+    // Section 2: SHIP Flight Cavern
+    obstacles.push(new Obstacle('block', 5000, 1, 4));
+    obstacles.push(new Obstacle('block', 5000, 7, 3));
+    obstacles.push(new Obstacle('coin', 5400, 5));
+    obstacles.push(new Obstacle('block', 5800, 1, 3));
+    obstacles.push(new Obstacle('block', 5800, 6, 4));
+    obstacles.push(new Obstacle('block', 6500, 2, 3));
+    obstacles.push(new Obstacle('block', 6500, 7, 2));
 
-    const p2 = new Obstacle('portal', 6000, 5, 1); p2.portalMode = MODES.BALL; obstacles.push(p2);
-    transitions.push({ distance: 6000, mode: MODES.BALL });
+    // Mode Portal: BALL
+    const p2 = new Obstacle('portal', 7200, 5, 1); p2.portalMode = MODES.BALL; obstacles.push(p2);
+    transitions.push({ distance: 7200, mode: MODES.BALL });
 
-    // Section 3: BALL
-    obstacles.push(new Obstacle('spike', 6500));
-    obstacles.push(new Obstacle('spike', 6500, 9, 1, false, true));
-    obstacles.push(new Obstacle('block', 7000, 1, 3));
-    obstacles.push(new Obstacle('yellow_ring', 7300, 4));
-    obstacles.push(new Obstacle('block', 7600, 7, 3));
+    // Section 3: BALL Gravity Switches
+    obstacles.push(new Obstacle('spike', 7700));
+    obstacles.push(new Obstacle('spike', 7700, 9, 1, false, true));
+    obstacles.push(new Obstacle('block', 8200, 1, 3));
+    obstacles.push(new Obstacle('yellow_ring', 8500, 4));
+    obstacles.push(new Obstacle('block', 8900, 7, 3));
+    obstacles.push(new Obstacle('spike', 9400));
 
-    const p3 = new Obstacle('portal', 8000, 5, 1); p3.portalMode = MODES.UFO; obstacles.push(p3);
-    transitions.push({ distance: 8000, mode: MODES.UFO });
+    // Mode Portal: UFO
+    const p3 = new Obstacle('portal', 10000, 5, 1); p3.portalMode = MODES.UFO; obstacles.push(p3);
+    transitions.push({ distance: 10000, mode: MODES.UFO });
 
-    // Section 4: UFO
-    obstacles.push(new Obstacle('block', 8500, 1, 3));
-    obstacles.push(new Obstacle('block', 8500, 6, 4));
-    obstacles.push(new Obstacle('coin', 8800, 4));
-    obstacles.push(new Obstacle('yellow_ring', 9200, 5));
+    // Section 4: UFO Bounces
+    obstacles.push(new Obstacle('block', 10500, 1, 3));
+    obstacles.push(new Obstacle('block', 10500, 6, 4));
+    obstacles.push(new Obstacle('coin', 10900, 4));
+    obstacles.push(new Obstacle('yellow_ring', 11300, 5));
+    obstacles.push(new Obstacle('yellow_ring', 11800, 4));
 
-    const p4 = new Obstacle('portal', 10000, 5, 1); p4.portalMode = MODES.WAVE; obstacles.push(p4);
-    transitions.push({ distance: 10000, mode: MODES.WAVE });
+    // Mode Portal: WAVE
+    const p4 = new Obstacle('portal', 12500, 5, 1); p4.portalMode = MODES.WAVE; obstacles.push(p4);
+    transitions.push({ distance: 12500, mode: MODES.WAVE });
 
-    // Section 5: WAVE
-    obstacles.push(new Obstacle('block', 10500, 1, 4));
-    obstacles.push(new Obstacle('block', 10500, 7, 3));
-    obstacles.push(new Obstacle('block', 11200, 1, 3));
-    obstacles.push(new Obstacle('block', 11200, 6, 4));
+    // Section 5: WAVE Zigzag Slalom
+    obstacles.push(new Obstacle('block', 13000, 1, 4));
+    obstacles.push(new Obstacle('block', 13000, 7, 3));
+    obstacles.push(new Obstacle('block', 13700, 1, 3));
+    obstacles.push(new Obstacle('block', 13700, 6, 4));
 
-    const p5 = new Obstacle('portal', 12000, 5, 1); p5.portalMode = MODES.CUBE; obstacles.push(p5);
-    transitions.push({ distance: 12000, mode: MODES.CUBE });
+    // Extended Section: Back to CUBE
+    const p5 = new Obstacle('portal', 14500, 5, 1); p5.portalMode = MODES.CUBE; obstacles.push(p5);
+    transitions.push({ distance: 14500, mode: MODES.CUBE });
 
-    // Final stretch
-    obstacles.push(new Obstacle('yellow_pad', 12300, 1));
-    obstacles.push(new Obstacle('yellow_ring', 12700, 4));
-    obstacles.push(new Obstacle('spike', 13100));
+    // Section 6: CUBE Extended Climax
+    obstacles.push(new Obstacle('yellow_pad', 15000, 1));
+    obstacles.push(new Obstacle('yellow_ring', 15400, 4));
+    obstacles.push(new Obstacle('block', 15800, 2, 2));
+    obstacles.push(new Obstacle('spike', 16300));
+    obstacles.push(new Obstacle('yellow_ring', 16700, 3));
+    obstacles.push(new Obstacle('spike', 17200));
+
+    // Final SHIP Portal Outro
+    const p6 = new Obstacle('portal', 17800, 5, 1); p6.portalMode = MODES.SHIP; obstacles.push(p6);
+    transitions.push({ distance: 17800, mode: MODES.SHIP });
+    obstacles.push(new Obstacle('block', 18300, 1, 3));
+    obstacles.push(new Obstacle('block', 18300, 6, 4));
+    obstacles.push(new Obstacle('coin', 18800, 4));
 }
 
 function buildLevel2() {
-    totalLevelLength = 50200;
-    // BALL
+    totalLevelLength = 75000;
+    // Section 1: BALL
     obstacles.push(new Obstacle('spike', 800));
     obstacles.push(new Obstacle('spike', 1200, 9, 1, false, true));
     obstacles.push(new Obstacle('yellow_ring', 1600, 4));
@@ -630,7 +649,7 @@ function buildLevel2() {
     const p1 = new Obstacle('portal', 2500, 5, 1); p1.portalMode = MODES.CUBE; obstacles.push(p1);
     transitions.push({ distance: 2500, mode: MODES.CUBE });
 
-    // CUBE
+    // Section 2: CUBE
     obstacles.push(new Obstacle('yellow_pad', 2800, 1));
     obstacles.push(new Obstacle('yellow_ring', 3200, 4));
     obstacles.push(new Obstacle('block', 3600, 2, 2));
@@ -638,7 +657,7 @@ function buildLevel2() {
     const p2 = new Obstacle('portal', 4000, 5, 1); p2.portalMode = MODES.WAVE; obstacles.push(p2);
     transitions.push({ distance: 4000, mode: MODES.WAVE });
 
-    // WAVE
+    // Section 3: WAVE
     obstacles.push(new Obstacle('block', 4500, 1, 4));
     obstacles.push(new Obstacle('block', 4500, 7, 3));
     obstacles.push(new Obstacle('coin', 4800, 5));
@@ -646,22 +665,29 @@ function buildLevel2() {
     const p3 = new Obstacle('portal', 5500, 5, 1); p3.portalMode = MODES.SHIP; obstacles.push(p3);
     transitions.push({ distance: 5500, mode: MODES.SHIP });
 
-    // SHIP
+    // Section 4: SHIP
     obstacles.push(new Obstacle('block', 6000, 1, 3));
     obstacles.push(new Obstacle('block', 6000, 6, 4));
 
     const p4 = new Obstacle('portal', 7500, 5, 1); p4.portalMode = MODES.UFO; obstacles.push(p4);
     transitions.push({ distance: 7500, mode: MODES.UFO });
 
-    // UFO
+    // Section 5: UFO
     obstacles.push(new Obstacle('yellow_ring', 8000, 4));
     obstacles.push(new Obstacle('yellow_ring', 8400, 6));
     obstacles.push(new Obstacle('spike', 8900));
+
+    // Extended Section: BALL Climax
+    const p5 = new Obstacle('portal', 9500, 5, 1); p5.portalMode = MODES.BALL; obstacles.push(p5);
+    transitions.push({ distance: 9500, mode: MODES.BALL });
+    obstacles.push(new Obstacle('spike', 10000));
+    obstacles.push(new Obstacle('yellow_ring', 10400, 4));
+    obstacles.push(new Obstacle('block', 10800, 1, 3));
 }
 
 function buildLevel3() {
-    totalLevelLength = 50200;
-    // WAVE
+    totalLevelLength = 75000;
+    // Section 1: WAVE
     obstacles.push(new Obstacle('block', 800, 1, 4));
     obstacles.push(new Obstacle('block', 800, 7, 3));
     obstacles.push(new Obstacle('coin', 1200, 5));
@@ -669,31 +695,38 @@ function buildLevel3() {
     const p1 = new Obstacle('portal', 1600, 5, 1); p1.portalMode = MODES.UFO; obstacles.push(p1);
     transitions.push({ distance: 1600, mode: MODES.UFO });
 
-    // UFO
+    // Section 2: UFO
     obstacles.push(new Obstacle('yellow_ring', 2000, 4));
     obstacles.push(new Obstacle('yellow_ring', 2400, 6));
 
     const p2 = new Obstacle('portal', 2800, 5, 1); p2.portalMode = MODES.SHIP; obstacles.push(p2);
     transitions.push({ distance: 2800, mode: MODES.SHIP });
 
-    // SHIP
+    // Section 3: SHIP
     obstacles.push(new Obstacle('block', 3200, 1, 3));
     obstacles.push(new Obstacle('block', 3200, 6, 4));
 
     const p3 = new Obstacle('portal', 4000, 5, 1); p3.portalMode = MODES.BALL; obstacles.push(p3);
     transitions.push({ distance: 4000, mode: MODES.BALL });
 
-    // BALL
+    // Section 4: BALL
     obstacles.push(new Obstacle('spike', 4400));
     obstacles.push(new Obstacle('yellow_ring', 4800, 4));
 
     const p4 = new Obstacle('portal', 5200, 5, 1); p4.portalMode = MODES.CUBE; obstacles.push(p4);
     transitions.push({ distance: 5200, mode: MODES.CUBE });
 
-    // CUBE
+    // Section 5: CUBE
     obstacles.push(new Obstacle('yellow_pad', 5500, 1));
     obstacles.push(new Obstacle('yellow_ring', 5900, 4));
     obstacles.push(new Obstacle('spike', 6300));
+
+    // Extended Section: WAVE Climax
+    const p5 = new Obstacle('portal', 6800, 5, 1); p5.portalMode = MODES.WAVE; obstacles.push(p5);
+    transitions.push({ distance: 6800, mode: MODES.WAVE });
+    obstacles.push(new Obstacle('block', 7300, 1, 4));
+    obstacles.push(new Obstacle('block', 7300, 7, 3));
+    obstacles.push(new Obstacle('coin', 7800, 4));
 }
 
 // Obstacle Constructor Class
@@ -1077,12 +1110,18 @@ function update() {
                 }
             } else if (obs.checkCollision(player, obsScreenX)) {
                 if (obs.type === 'yellow_pad') {
-                    player.velocityY = JUMP_FORCE * 1.3;
+                    player.chainCount = (player.lastBounceTime && Date.now() - player.lastBounceTime < 600) ? (player.chainCount || 0) + 1 : 1;
+                    player.lastBounceTime = Date.now();
+                    const boost = Math.min(1.2, 1.0 + player.chainCount * 0.04);
+                    player.velocityY = JUMP_FORCE * 1.3 * boost;
                     player.isGrounded = false;
                     createSparks(player.x, player.y);
                 } else if (obs.type === 'yellow_ring') {
                     if (jumpPressed) {
-                        player.velocityY = JUMP_FORCE;
+                        player.chainCount = (player.lastBounceTime && Date.now() - player.lastBounceTime < 600) ? (player.chainCount || 0) + 1 : 1;
+                        player.lastBounceTime = Date.now();
+                        const boost = Math.min(1.2, 1.0 + player.chainCount * 0.04);
+                        player.velocityY = JUMP_FORCE * boost;
                         player.isGrounded = false;
                         createSparks(player.x, player.y);
                     }
