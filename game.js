@@ -562,12 +562,12 @@ function buildLevel1() {
     obstacles.push(new Obstacle('spike', 1900));
     obstacles.push(new Obstacle('spike', 1935));
 
-    // Floating staircase
+    // Floating staircase & Bounce platforms
     obstacles.push(new Obstacle('block', 2400, 1, 1));
-    obstacles.push(new Obstacle('yellow_pad', 2405, 1));
+    obstacles.push(new Obstacle('magenta_pad', 2405, 1));
     obstacles.push(new Obstacle('block', 2800, 2, 1));
     obstacles.push(new Obstacle('coin', 2810, 3));
-    obstacles.push(new Obstacle('yellow_ring', 3200, 3));
+    obstacles.push(new Obstacle('magenta_ring', 3200, 3));
     obstacles.push(new Obstacle('block', 3500, 1, 1));
 
     // Colored Mode Portals
@@ -761,16 +761,18 @@ class Obstacle {
             ctx.lineWidth = 2;
             ctx.fillRect(screenX, this.y, this.width, this.height);
             ctx.strokeRect(screenX, this.y, this.width, this.height);
-        } else if (this.type === 'yellow_pad') {
-            ctx.fillStyle = '#ffd700';
-            ctx.shadowColor = '#ffd700';
+        if (this.type === 'yellow_pad' || this.type === 'magenta_pad') {
+            const padColor = this.type === 'magenta_pad' ? '#ff00aa' : '#ffd700';
+            ctx.fillStyle = padColor;
+            ctx.shadowColor = padColor;
             ctx.shadowBlur = 12;
             ctx.fillRect(screenX, this.y, this.width, this.height);
             ctx.shadowBlur = 0;
-        } else if (this.type === 'yellow_ring') {
-            ctx.strokeStyle = '#ffd700';
+        } else if (this.type === 'yellow_ring' || this.type === 'magenta_ring') {
+            const ringColor = this.type === 'magenta_ring' ? '#ff00aa' : '#ffd700';
+            ctx.strokeStyle = ringColor;
             ctx.lineWidth = 4;
-            ctx.shadowColor = '#ffd700';
+            ctx.shadowColor = ringColor;
             ctx.shadowBlur = 15;
             ctx.beginPath();
             ctx.arc(screenX + 15, this.y + 15, 12, 0, Math.PI * 2);
@@ -846,7 +848,7 @@ class Obstacle {
                     pBox.y + pBox.height > oBox.y);
         }
 
-        if (this.type === 'yellow_pad' || this.type === 'yellow_ring') {
+        if (this.type === 'yellow_pad' || this.type === 'magenta_pad' || this.type === 'yellow_ring' || this.type === 'magenta_ring') {
             return (pBox.x < oBox.x + oBox.width &&
                     pBox.x + pBox.width > oBox.x &&
                     pBox.y < oBox.y + oBox.height &&
@@ -953,7 +955,7 @@ function update() {
         player.jumpBufferCounter--;
     }
 
-    // Physics per Mode
+    // Physics per Mode (with Jump Cut / Jump Scaling for variable height)
     if (player.mode === MODES.CUBE) {
         player.velocityY += GRAVITY;
         if (player.jumpBufferCounter > 0 && player.coyoteCounter > 0) {
@@ -961,6 +963,10 @@ function update() {
             player.isGrounded = false;
             player.jumpBufferCounter = 0;
             createSparks(player.x, player.y + player.height);
+        }
+        // Jump Scaling: variable jump height on early release
+        if (!jumpPressed && player.velocityY < JUMP_FORCE * 0.45) {
+            player.velocityY = JUMP_FORCE * 0.45;
         }
         player.rotation += ROTATION_SPEED;
     } else if (player.mode === MODES.SHIP) {
@@ -1080,9 +1086,19 @@ function update() {
                     player.velocityY = JUMP_FORCE * 1.3;
                     player.isGrounded = false;
                     createSparks(player.x, player.y);
+                } else if (obs.type === 'magenta_pad') {
+                    player.velocityY = JUMP_FORCE * 0.85;
+                    player.isGrounded = false;
+                    createSparks(player.x, player.y);
                 } else if (obs.type === 'yellow_ring') {
                     if (jumpPressed) {
                         player.velocityY = JUMP_FORCE;
+                        player.isGrounded = false;
+                        createSparks(player.x, player.y);
+                    }
+                } else if (obs.type === 'magenta_ring') {
+                    if (jumpPressed) {
+                        player.velocityY = JUMP_FORCE * 0.7;
                         player.isGrounded = false;
                         createSparks(player.x, player.y);
                     }
