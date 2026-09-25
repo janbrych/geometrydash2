@@ -222,6 +222,8 @@ let particles = [];
 let screenShake = 0;
 let deathFlash = 0;
 let transitionFlash = 0;
+let modeBannerTimer = 0;
+let currentBannerMode = '';
 
 // Input
 let jumpPressed = false;
@@ -717,11 +719,11 @@ class Obstacle {
             this.y = canvas.height - GROUND_HEIGHT - (heightUnits * 40);
         }
 
-        if (this.type === 'yellow_ring') {
+        if (this.type === 'yellow_ring' || this.type === 'magenta_ring') {
             this.y = canvas.height - GROUND_HEIGHT - (heightUnits * 40);
             this.width = 30;
             this.height = 30;
-        } else if (this.type === 'yellow_pad') {
+        } else if (this.type === 'yellow_pad' || this.type === 'magenta_pad') {
             this.height = 10;
             this.y = canvas.height - GROUND_HEIGHT - 10;
         } else if (this.type === 'coin') {
@@ -767,10 +769,25 @@ class Obstacle {
             ctx.shadowBlur = 12;
             ctx.fillRect(screenX, this.y, this.width, this.height);
             ctx.shadowBlur = 0;
+        } else if (this.type === 'magenta_pad') {
+            ctx.fillStyle = '#ff00ff';
+            ctx.shadowColor = '#ff00ff';
+            ctx.shadowBlur = 12;
+            ctx.fillRect(screenX, this.y, this.width, this.height);
+            ctx.shadowBlur = 0;
         } else if (this.type === 'yellow_ring') {
             ctx.strokeStyle = '#ffd700';
             ctx.lineWidth = 4;
             ctx.shadowColor = '#ffd700';
+            ctx.shadowBlur = 15;
+            ctx.beginPath();
+            ctx.arc(screenX + 15, this.y + 15, 12, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        } else if (this.type === 'magenta_ring') {
+            ctx.strokeStyle = '#ff00ff';
+            ctx.lineWidth = 4;
+            ctx.shadowColor = '#ff00ff';
             ctx.shadowBlur = 15;
             ctx.beginPath();
             ctx.arc(screenX + 15, this.y + 15, 12, 0, Math.PI * 2);
@@ -846,7 +863,8 @@ class Obstacle {
                     pBox.y + pBox.height > oBox.y);
         }
 
-        if (this.type === 'yellow_pad' || this.type === 'yellow_ring') {
+        if (this.type === 'yellow_pad' || this.type === 'yellow_ring' ||
+            this.type === 'magenta_pad' || this.type === 'magenta_ring') {
             return (pBox.x < oBox.x + oBox.width &&
                     pBox.x + pBox.width > oBox.x &&
                     pBox.y < oBox.y + oBox.height &&
@@ -936,6 +954,8 @@ function update() {
             if (player.mode !== tr.mode) {
                 player.mode = tr.mode;
                 transitionFlash = 1.0;
+                modeBannerTimer = 45;
+                currentBannerMode = tr.mode;
             }
         }
     });
@@ -961,6 +981,10 @@ function update() {
             player.isGrounded = false;
             player.jumpBufferCounter = 0;
             createSparks(player.x, player.y + player.height);
+        }
+        // Jump Scaling: Variable jump height on early button release
+        if (!jumpPressed && player.velocityY < -4) {
+            player.velocityY *= 0.5;
         }
         player.rotation += ROTATION_SPEED;
     } else if (player.mode === MODES.SHIP) {
@@ -1080,9 +1104,19 @@ function update() {
                     player.velocityY = JUMP_FORCE * 1.3;
                     player.isGrounded = false;
                     createSparks(player.x, player.y);
+                } else if (obs.type === 'magenta_pad') {
+                    player.velocityY = JUMP_FORCE * 0.9;
+                    player.isGrounded = false;
+                    createSparks(player.x, player.y);
                 } else if (obs.type === 'yellow_ring') {
                     if (jumpPressed) {
                         player.velocityY = JUMP_FORCE;
+                        player.isGrounded = false;
+                        createSparks(player.x, player.y);
+                    }
+                } else if (obs.type === 'magenta_ring') {
+                    if (jumpPressed) {
+                        player.velocityY = JUMP_FORCE * 0.85;
                         player.isGrounded = false;
                         createSparks(player.x, player.y);
                     }
@@ -1114,6 +1148,116 @@ function handleDeath() {
     screenShake = 15;
     attempts++;
     resetGame();
+}
+
+function drawPlayerShape(p, skin) {
+    ctx.fillStyle = skin.color;
+    ctx.strokeStyle = skin.secondaryColor;
+    ctx.lineWidth = 3;
+    ctx.shadowColor = skin.color;
+    ctx.shadowBlur = 12;
+
+    const w = p.width;
+    const h = p.height;
+
+    if (p.mode === MODES.CUBE) {
+        ctx.fillRect(-w / 2, -h / 2, w, h);
+        ctx.strokeRect(-w / 2, -h / 2, w, h);
+
+        // Inner Face details
+        ctx.fillStyle = '#000';
+        ctx.fillRect(-8, -8, 5, 5);
+        ctx.fillRect(3, -8, 5, 5);
+        ctx.fillRect(-6, 4, 12, 3);
+    } else if (p.mode === MODES.SHIP) {
+        // Ship Body (pointed triangle / jet nose)
+        ctx.beginPath();
+        ctx.moveTo(w / 2, 0);
+        ctx.lineTo(-w / 2, -h / 2);
+        ctx.lineTo(-w / 4, 0);
+        ctx.lineTo(-w / 2, h / 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Cockpit dome
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.beginPath();
+        ctx.arc(0, -2, 7, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Thruster Flame
+        if (jumpPressed) {
+            ctx.fillStyle = '#ffaa00';
+            ctx.shadowColor = '#ff5500';
+            ctx.shadowBlur = 15;
+            ctx.beginPath();
+            ctx.moveTo(-w / 2, -5);
+            ctx.lineTo(-w / 2 - 14 - Math.random() * 6, 0);
+            ctx.lineTo(-w / 2, 5);
+            ctx.closePath();
+            ctx.fill();
+        }
+    } else if (p.mode === MODES.BALL) {
+        // Ball Circle
+        const radius = w / 2;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Inner Spinning Spokes
+        ctx.strokeStyle = skin.secondaryColor;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(-radius + 4, 0); ctx.lineTo(radius - 4, 0);
+        ctx.moveTo(0, -radius + 4); ctx.lineTo(0, radius - 4);
+        ctx.stroke();
+
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.arc(0, 0, 5, 0, Math.PI * 2);
+        ctx.fill();
+    } else if (p.mode === MODES.UFO) {
+        // UFO Glass Canopy
+        ctx.fillStyle = 'rgba(0, 240, 255, 0.6)';
+        ctx.beginPath();
+        ctx.arc(0, -6, 12, Math.PI, 0);
+        ctx.fill();
+        ctx.strokeStyle = skin.secondaryColor;
+        ctx.stroke();
+
+        // UFO Saucer Base
+        ctx.fillStyle = skin.color;
+        ctx.beginPath();
+        ctx.ellipse(0, 4, w / 2 + 2, 10, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Lights
+        ctx.fillStyle = '#ffff00';
+        ctx.fillRect(-10, 4, 4, 4);
+        ctx.fillRect(-2, 4, 4, 4);
+        ctx.fillRect(6, 4, 4, 4);
+    } else if (p.mode === MODES.WAVE) {
+        // Wave Arrow Dart Head
+        ctx.beginPath();
+        ctx.moveTo(w / 2 + 4, 0);
+        ctx.lineTo(-w / 2, -h / 2);
+        ctx.lineTo(-w / 4, 0);
+        ctx.lineTo(-w / 2, h / 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Inner glowing core
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(0, 0, 5, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    ctx.shadowBlur = 0;
 }
 
 // RENDER FUNCTION
@@ -1177,22 +1321,8 @@ function draw() {
     ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
     ctx.rotate(player.rotation);
 
-    ctx.fillStyle = skin.color;
-    ctx.strokeStyle = skin.secondaryColor;
-    ctx.lineWidth = 3;
-    ctx.shadowColor = skin.color;
-    ctx.shadowBlur = 12;
+    drawPlayerShape(player, skin);
 
-    ctx.fillRect(-player.width / 2, -player.height / 2, player.width, player.height);
-    ctx.strokeRect(-player.width / 2, -player.height / 2, player.width, player.height);
-
-    // Inner Face details
-    ctx.fillStyle = '#000';
-    ctx.fillRect(-8, -8, 5, 5);
-    ctx.fillRect(3, -8, 5, 5);
-    ctx.fillRect(-6, 4, 12, 3);
-
-    ctx.shadowBlur = 0;
     ctx.restore();
 
     ctx.restore(); // Screen shake restore
@@ -1208,6 +1338,42 @@ function draw() {
         ctx.fillStyle = `rgba(255, 0, 85, ${deathFlash})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         deathFlash -= 0.1;
+    }
+
+    // Upcoming Portal HUD Warning
+    const nextPortal = transitions.find(tr => tr.distance > gameDistance && tr.distance - gameDistance < 600);
+    if (nextPortal) {
+        const portalColor = PORTAL_COLORS[nextPortal.mode] || '#ffffff';
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.strokeStyle = portalColor;
+        ctx.lineWidth = 2;
+        ctx.fillRect(canvas.width / 2 - 100, 20, 200, 32);
+        ctx.strokeRect(canvas.width / 2 - 100, 20, 200, 32);
+
+        ctx.fillStyle = portalColor;
+        ctx.font = 'bold 14px Outfit';
+        ctx.textAlign = 'center';
+        ctx.fillText(`NEXT MODE: ${nextPortal.mode.toUpperCase()}`, canvas.width / 2, 41);
+    }
+
+    // Mode Banner HUD
+    if (modeBannerTimer > 0) {
+        const alpha = Math.min(1.0, modeBannerTimer / 20);
+        const bannerColor = PORTAL_COLORS[currentBannerMode] || '#ffffff';
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(0, canvas.height / 2 - 40, canvas.width, 80);
+
+        ctx.fillStyle = bannerColor;
+        ctx.shadowColor = bannerColor;
+        ctx.shadowBlur = 20;
+        ctx.font = 'bold 32px Outfit';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`MODE: ${currentBannerMode.toUpperCase()}`, canvas.width / 2, canvas.height / 2);
+        ctx.restore();
+        modeBannerTimer--;
     }
 }
 

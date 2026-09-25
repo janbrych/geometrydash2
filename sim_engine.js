@@ -140,13 +140,19 @@ class GameSimulator {
             const obsY = groundLevel - obs.y;
 
             if (obsX > -this.player.width && obsX < this.player.x + this.player.width + 100) {
-                if (obs.type === 'pad') {
+                if (obs.type === 'pad' || obs.type === 'yellow_pad') {
                     if (this.player.x + this.player.width > obsX && this.player.x < obsX + obs.w &&
                         this.player.y + this.player.height > obsY - 10 && this.player.y + this.player.height < obsY + 20) {
                         this.player.velocityY = JUMP_FORCE * 1.4;
                         this.player.isGrounded = false;
                     }
-                } else if (obs.type === 'ring') {
+                } else if (obs.type === 'magenta_pad') {
+                    if (this.player.x + this.player.width > obsX && this.player.x < obsX + obs.w &&
+                        this.player.y + this.player.height > obsY - 10 && this.player.y + this.player.height < obsY + 20) {
+                        this.player.velocityY = JUMP_FORCE * 0.9;
+                        this.player.isGrounded = false;
+                    }
+                } else if (obs.type === 'ring' || obs.type === 'yellow_ring') {
                     if (this.player.x + this.player.width > obsX && this.player.x < obsX + obs.w &&
                         this.player.y + this.player.height > obsY - obs.h && this.player.y < obsY) {
                         if (this.jumpPressed && !this.jumpProcessed) {
