@@ -266,12 +266,6 @@ window.addEventListener('mouseup', () => {
 });
 
 // UI Event Handling Setup
-function blurActiveElement() {
-    if (document.activeElement && typeof document.activeElement.blur === 'function') {
-        document.activeElement.blur();
-    }
-}
-
 function initUI() {
     updateCoinDisplays();
     updateThemeUI();
@@ -1116,6 +1110,118 @@ function handleDeath() {
     resetGame();
 }
 
+// Draw Mode-Specific Player Visual Shapes
+function drawPlayerShape(ctx, p, skin) {
+    ctx.fillStyle = skin.color;
+    ctx.strokeStyle = skin.secondaryColor;
+    ctx.lineWidth = 3;
+    ctx.shadowColor = skin.color;
+    ctx.shadowBlur = 12;
+
+    const w = p.width;
+    const h = p.height;
+    const hw = w / 2;
+    const hh = h / 2;
+
+    if (p.mode === MODES.SHIP) {
+        // Rocket / Spaceship
+        ctx.beginPath();
+        ctx.moveTo(hw + 4, 0);
+        ctx.lineTo(-hw + 6, -hh + 4);
+        ctx.lineTo(-hw, 0);
+        ctx.lineTo(-hw + 6, hh - 4);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Cockpit canopy
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.ellipse(2, -2, 8, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Thruster flame
+        if (jumpPressed) {
+            ctx.fillStyle = '#ff9900';
+            ctx.beginPath();
+            ctx.moveTo(-hw, -4);
+            ctx.lineTo(-hw - 12, 0);
+            ctx.lineTo(-hw, 4);
+            ctx.closePath();
+            ctx.fill();
+        }
+    } else if (p.mode === MODES.BALL) {
+        // Rolling orb / Ball
+        ctx.beginPath();
+        ctx.arc(0, 0, hw, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Inner spokes
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-hw + 8, 0); ctx.lineTo(hw - 8, 0);
+        ctx.moveTo(0, -hh + 8); ctx.lineTo(0, hh - 8);
+        ctx.stroke();
+
+        ctx.fillStyle = skin.secondaryColor;
+        ctx.beginPath();
+        ctx.arc(0, 0, 6, 0, Math.PI * 2);
+        ctx.fill();
+    } else if (p.mode === MODES.UFO) {
+        // Flying Saucer UFO
+        // Dome
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.beginPath();
+        ctx.arc(0, -4, 12, Math.PI, 0);
+        ctx.fill();
+
+        // Saucer Body
+        ctx.fillStyle = skin.color;
+        ctx.beginPath();
+        ctx.ellipse(0, 2, hw, 10, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Bottom light core
+        ctx.fillStyle = skin.secondaryColor;
+        ctx.beginPath();
+        ctx.arc(0, 8, 5, 0, Math.PI * 2);
+        ctx.fill();
+    } else if (p.mode === MODES.WAVE) {
+        // Sharp Wave Dart
+        ctx.beginPath();
+        ctx.moveTo(hw + 4, 0);
+        ctx.lineTo(-hw, -hh);
+        ctx.lineTo(-hw + 8, 0);
+        ctx.lineTo(-hw, hh);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-hw + 10, -4);
+        ctx.lineTo(-hw + 10, 4);
+        ctx.closePath();
+        ctx.fill();
+    } else {
+        // Default Cube Mode
+        ctx.fillRect(-hw, -hh, w, h);
+        ctx.strokeRect(-hw, -hh, w, h);
+
+        // Inner Face details
+        ctx.fillStyle = '#000';
+        ctx.fillRect(-8, -8, 5, 5);
+        ctx.fillRect(3, -8, 5, 5);
+        ctx.fillRect(-6, 4, 12, 3);
+    }
+
+    ctx.shadowBlur = 0;
+}
+
 // RENDER FUNCTION
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1177,22 +1283,8 @@ function draw() {
     ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
     ctx.rotate(player.rotation);
 
-    ctx.fillStyle = skin.color;
-    ctx.strokeStyle = skin.secondaryColor;
-    ctx.lineWidth = 3;
-    ctx.shadowColor = skin.color;
-    ctx.shadowBlur = 12;
+    drawPlayerShape(ctx, player, skin);
 
-    ctx.fillRect(-player.width / 2, -player.height / 2, player.width, player.height);
-    ctx.strokeRect(-player.width / 2, -player.height / 2, player.width, player.height);
-
-    // Inner Face details
-    ctx.fillStyle = '#000';
-    ctx.fillRect(-8, -8, 5, 5);
-    ctx.fillRect(3, -8, 5, 5);
-    ctx.fillRect(-6, 4, 12, 3);
-
-    ctx.shadowBlur = 0;
     ctx.restore();
 
     ctx.restore(); // Screen shake restore
