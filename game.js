@@ -1177,22 +1177,8 @@ function draw() {
     ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
     ctx.rotate(player.rotation);
 
-    ctx.fillStyle = skin.color;
-    ctx.strokeStyle = skin.secondaryColor;
-    ctx.lineWidth = 3;
-    ctx.shadowColor = skin.color;
-    ctx.shadowBlur = 12;
+    drawPlayerShape(ctx, player.mode, player.width, skin);
 
-    ctx.fillRect(-player.width / 2, -player.height / 2, player.width, player.height);
-    ctx.strokeRect(-player.width / 2, -player.height / 2, player.width, player.height);
-
-    // Inner Face details
-    ctx.fillStyle = '#000';
-    ctx.fillRect(-8, -8, 5, 5);
-    ctx.fillRect(3, -8, 5, 5);
-    ctx.fillRect(-6, 4, 12, 3);
-
-    ctx.shadowBlur = 0;
     ctx.restore();
 
     ctx.restore(); // Screen shake restore
@@ -1209,6 +1195,65 @@ function draw() {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         deathFlash -= 0.1;
     }
+}
+
+function drawPlayerShape(c, mode, size, skin) {
+    const half = size / 2;
+    c.fillStyle = skin.color;
+    c.strokeStyle = skin.secondaryColor;
+    c.lineWidth = 3;
+    c.shadowColor = skin.color;
+    c.shadowBlur = 12;
+
+    if (mode === MODES.CUBE) {
+        c.fillRect(-half, -half, size, size);
+        c.strokeRect(-half, -half, size, size);
+        c.fillStyle = '#000';
+        c.fillRect(-8, -8, 5, 5);
+        c.fillRect(3, -8, 5, 5);
+        c.fillRect(-6, 4, 12, 3);
+    } else if (mode === MODES.SHIP) {
+        c.beginPath();
+        c.moveTo(half, 0);
+        c.lineTo(-half, -half / 1.5);
+        c.lineTo(-half / 2, 0);
+        c.lineTo(-half, half / 1.5);
+        c.closePath();
+        c.fill();
+        c.stroke();
+        c.fillStyle = '#000';
+        c.beginPath();
+        c.arc(0, -2, 5, 0, Math.PI * 2);
+        c.fill();
+    } else if (mode === MODES.BALL) {
+        c.beginPath();
+        c.arc(0, 0, half, 0, Math.PI * 2);
+        c.fill();
+        c.stroke();
+        c.strokeStyle = skin.secondaryColor;
+        c.beginPath();
+        c.moveTo(-half, 0); c.lineTo(half, 0);
+        c.moveTo(0, -half); c.lineTo(0, half);
+        c.stroke();
+    } else if (mode === MODES.UFO) {
+        c.beginPath();
+        c.ellipse(0, 0, half * 1.2, half / 2, 0, 0, Math.PI * 2);
+        c.fill();
+        c.stroke();
+        c.fillStyle = skin.secondaryColor;
+        c.beginPath();
+        c.arc(0, -5, half / 2, Math.PI, 0);
+        c.fill();
+    } else if (mode === MODES.WAVE) {
+        c.beginPath();
+        c.moveTo(half, 0);
+        c.lineTo(-half, -half);
+        c.lineTo(-half, half);
+        c.closePath();
+        c.fill();
+        c.stroke();
+    }
+    c.shadowBlur = 0;
 }
 
 // Character Preview Renderer for Lobby
