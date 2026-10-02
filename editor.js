@@ -318,10 +318,10 @@ function handleCanvasClick(e) {
             newObj.type = 'spike';
             newObj.ceiling = true;
             newObj.y = canvas.height - GROUND_HEIGHT - CEILING_HEIGHT;
-        } else if (selectedObjectType === 'yellow_pad') {
+        } else if (selectedObjectType === 'yellow_pad' || selectedObjectType === 'magenta_pad') {
             newObj.h = 10;
             newObj.y = 0;
-        } else if (selectedObjectType === 'yellow_ring' || selectedObjectType === 'coin') {
+        } else if (selectedObjectType === 'yellow_ring' || selectedObjectType === 'magenta_ring' || selectedObjectType === 'coin') {
             newObj.w = 30;
             newObj.h = 30;
         } else if (selectedObjectType === 'portal') {
@@ -548,8 +548,17 @@ function renderGridAndLevel() {
         } else if (obs.type === 'yellow_pad') {
             ctx.fillStyle = '#ffd700';
             ctx.fillRect(screen.x, screen.y, w, h);
+        } else if (obs.type === 'magenta_pad') {
+            ctx.fillStyle = '#ff00aa';
+            ctx.fillRect(screen.x, screen.y, w, h);
         } else if (obs.type === 'yellow_ring') {
             ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(screen.x + w / 2, screen.y + h / 2, w / 2, 0, Math.PI * 2);
+            ctx.stroke();
+        } else if (obs.type === 'magenta_ring') {
+            ctx.strokeStyle = '#ff00aa';
             ctx.lineWidth = 3;
             ctx.beginPath();
             ctx.arc(screen.x + w / 2, screen.y + h / 2, w / 2, 0, Math.PI * 2);
@@ -674,9 +683,18 @@ function updatePlaytestPhysics() {
                     p.vy = JUMP_FORCE * 1.3;
                     p.isGrounded = false;
                 }
+            } else if (obs.type === 'magenta_pad') {
+                if (p.x + p.w > obsScreenX && p.x < obsScreenX + obs.w && p.y + p.h >= obsY) {
+                    p.vy = JUMP_FORCE * 0.8;
+                    p.isGrounded = false;
+                }
             } else if (obs.type === 'yellow_ring') {
                 if (p.x + p.w > obsScreenX && p.x < obsScreenX + obs.w && p.y + p.h >= obsY && p.jumpPressed) {
                     p.vy = JUMP_FORCE;
+                }
+            } else if (obs.type === 'magenta_ring') {
+                if (p.x + p.w > obsScreenX && p.x < obsScreenX + obs.w && p.y + p.h >= obsY && p.jumpPressed) {
+                    p.vy = JUMP_FORCE * 0.65;
                 }
             } else if (obs.type === 'spike') {
                 const margin = 8;
@@ -854,9 +872,18 @@ function updateBotSuitePhysics() {
                         b.vy = JUMP_FORCE * 1.3;
                         b.isGrounded = false;
                     }
+                } else if (obs.type === 'magenta_pad') {
+                    if (b.x + b.w > obsScreenX && b.x < obsScreenX + obs.w && b.y + b.h >= obsY) {
+                        b.vy = JUMP_FORCE * 0.8;
+                        b.isGrounded = false;
+                    }
                 } else if (obs.type === 'yellow_ring') {
                     if (b.x + b.w > obsScreenX && b.x < obsScreenX + obs.w && b.y + b.h >= obsY && b.jumpPressed) {
                         b.vy = JUMP_FORCE;
+                    }
+                } else if (obs.type === 'magenta_ring') {
+                    if (b.x + b.w > obsScreenX && b.x < obsScreenX + obs.w && b.y + b.h >= obsY && b.jumpPressed) {
+                        b.vy = JUMP_FORCE * 0.65;
                     }
                 } else if (obs.type === 'spike') {
                     const margin = 8;
