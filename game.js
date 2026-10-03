@@ -266,12 +266,6 @@ window.addEventListener('mouseup', () => {
 });
 
 // UI Event Handling Setup
-function blurActiveElement() {
-    if (document.activeElement && typeof document.activeElement.blur === 'function') {
-        document.activeElement.blur();
-    }
-}
-
 function initUI() {
     updateCoinDisplays();
     updateThemeUI();
@@ -538,7 +532,12 @@ function buildCustomLevel(lvl) {
             obstacles.push(obs);
             transitions.push({ distance: o.x, mode: o.mode });
         } else if (o.type === 'spike') {
-            obstacles.push(new Obstacle('spike', o.x, 1, 1, false, !!o.ceiling));
+            if (o.ceiling) {
+                obstacles.push(new Obstacle('spike', o.x, 1, 1, false, true));
+            } else {
+                const yUnits = Math.round((o.y || 0) / 40) + 1;
+                obstacles.push(new Obstacle('spike', o.x, yUnits, 1));
+            }
         } else if (o.type === 'block') {
             const hUnits = Math.round((o.h || 40) / 40);
             const wUnits = Math.round((o.w || 40) / 40);
@@ -723,7 +722,7 @@ class Obstacle {
             this.height = 30;
         } else if (this.type === 'yellow_pad') {
             this.height = 10;
-            this.y = canvas.height - GROUND_HEIGHT - 10;
+            this.y = canvas.height - GROUND_HEIGHT - ((heightUnits - 1) * 40) - 10;
         } else if (this.type === 'coin') {
             this.width = 30;
             this.height = 30;
@@ -1000,11 +999,12 @@ function update() {
     player.y += player.velocityY;
 
     // Floor / Ceiling Boundaries
+    let groundedThisFrame = false;
     const groundY = canvas.height - GROUND_HEIGHT - player.height;
     if (player.y >= groundY) {
         player.y = groundY;
         player.velocityY = 0;
-        player.isGrounded = true;
+        groundedThisFrame = true;
         if (player.mode === MODES.CUBE) {
             // Snap angle
             player.rotation = Math.round(player.rotation / (Math.PI / 2)) * (Math.PI / 2);
@@ -1013,7 +1013,7 @@ function update() {
         player.y = CEILING_HEIGHT;
         player.velocityY = 0;
         if (player.mode === MODES.BALL && player.gravityDir === -1) {
-            player.isGrounded = true;
+            groundedThisFrame = true;
         }
     }
 
@@ -1038,7 +1038,7 @@ function update() {
                         player.velocityY >= 0) {
                         player.y = obsY - player.height;
                         player.velocityY = 0;
-                        player.isGrounded = true;
+                        groundedThisFrame = true;
                         player.coyoteCounter = COYOTE_TIME;
                         if (player.mode === MODES.CUBE) {
                             player.rotation = Math.round(player.rotation / (Math.PI / 2)) * (Math.PI / 2);
@@ -1052,7 +1052,7 @@ function update() {
                              player.velocityY <= 0) {
                         player.y = obsY + obsH;
                         player.velocityY = 0;
-                        player.isGrounded = true;
+                        groundedThisFrame = true;
                         player.coyoteCounter = COYOTE_TIME;
                         return;
                     }
@@ -1092,6 +1092,8 @@ function update() {
             }
         }
     });
+
+    player.isGrounded = groundedThisFrame;
 
     // Progress % calculation
     let currentProgress = Math.min(100, Math.floor((gameDistance / totalLevelLength) * 100));
