@@ -222,6 +222,8 @@ let particles = [];
 let screenShake = 0;
 let deathFlash = 0;
 let transitionFlash = 0;
+let currentTransitionBanner = null;
+let transitionBannerTimer = 0;
 
 // Input
 let jumpPressed = false;
@@ -248,6 +250,9 @@ window.addEventListener('keydown', (e) => {
 window.addEventListener('keyup', (e) => {
     if (e.code === 'Space' || e.code === 'ArrowUp') {
         e.preventDefault();
+        if (player.mode === MODES.CUBE && player.velocityY < -3) {
+            player.velocityY *= 0.5;
+        }
         jumpPressed = false;
         jumpProcessed = false;
     }
@@ -261,6 +266,9 @@ window.addEventListener('mousedown', (e) => {
     }
 });
 window.addEventListener('mouseup', () => {
+    if (player.mode === MODES.CUBE && player.velocityY < -3) {
+        player.velocityY *= 0.5;
+    }
     jumpPressed = false;
     jumpProcessed = false;
 });
@@ -935,6 +943,8 @@ function update() {
             if (player.mode !== tr.mode) {
                 player.mode = tr.mode;
                 transitionFlash = 1.0;
+                currentTransitionBanner = tr.mode.toUpperCase() + ' MODE!';
+                transitionBannerTimer = 60;
             }
         }
     });
@@ -1118,6 +1128,120 @@ function handleDeath() {
     resetGame();
 }
 
+function drawPlayerShape(mode, width, height, color, secondaryColor) {
+    const halfW = width / 2;
+    const halfH = height / 2;
+
+    ctx.fillStyle = color;
+    ctx.strokeStyle = secondaryColor;
+    ctx.lineWidth = 3;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 12;
+
+    switch (mode) {
+        case MODES.CUBE:
+            ctx.fillRect(-halfW, -halfH, width, height);
+            ctx.strokeRect(-halfW, -halfH, width, height);
+            // Face details
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(-8, -8, 5, 5);
+            ctx.fillRect(3, -8, 5, 5);
+            ctx.fillRect(-6, 4, 12, 3);
+            break;
+
+        case MODES.SHIP:
+            ctx.beginPath();
+            ctx.moveTo(halfW, 0);
+            ctx.lineTo(-halfW, -halfH);
+            ctx.lineTo(-halfW + 10, 0);
+            ctx.lineTo(-halfW, halfH);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Cockpit dome
+            ctx.fillStyle = '#00ffff';
+            ctx.beginPath();
+            ctx.arc(0, -2, 7, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Thruster flame when holding jump
+            if (jumpPressed) {
+                ctx.fillStyle = '#ffaa00';
+                ctx.beginPath();
+                ctx.moveTo(-halfW + 5, -5);
+                ctx.lineTo(-halfW - 15, 0);
+                ctx.lineTo(-halfW + 5, 5);
+                ctx.closePath();
+                ctx.fill();
+            }
+            break;
+
+        case MODES.BALL:
+            ctx.beginPath();
+            ctx.arc(0, 0, halfW, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.strokeStyle = secondaryColor;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(-halfW + 5, 0); ctx.lineTo(halfW - 5, 0);
+            ctx.moveTo(0, -halfH + 5); ctx.lineTo(0, halfH - 5);
+            ctx.stroke();
+
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(0, 0, 5, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+
+        case MODES.UFO:
+            // Saucer base
+            ctx.beginPath();
+            ctx.ellipse(0, 4, halfW, halfH * 0.45, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Dome canopy
+            ctx.fillStyle = 'rgba(0, 240, 255, 0.75)';
+            ctx.beginPath();
+            ctx.arc(0, -1, halfW * 0.55, Math.PI, 0);
+            ctx.fill();
+            ctx.stroke();
+
+            // Core beam light
+            ctx.fillStyle = '#ffff00';
+            ctx.beginPath();
+            ctx.arc(0, 6, 4, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+
+        case MODES.WAVE:
+            ctx.beginPath();
+            ctx.moveTo(halfW + 5, 0);
+            ctx.lineTo(-halfW, -halfH);
+            ctx.lineTo(-halfW + 8, 0);
+            ctx.lineTo(-halfW, halfH);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(-2, 0, 4, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+
+        default:
+            ctx.fillRect(-halfW, -halfH, width, height);
+            ctx.strokeRect(-halfW, -halfH, width, height);
+            break;
+    }
+
+    ctx.shadowBlur = 0;
+}
+
 // RENDER FUNCTION
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1179,22 +1303,8 @@ function draw() {
     ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
     ctx.rotate(player.rotation);
 
-    ctx.fillStyle = skin.color;
-    ctx.strokeStyle = skin.secondaryColor;
-    ctx.lineWidth = 3;
-    ctx.shadowColor = skin.color;
-    ctx.shadowBlur = 12;
+    drawPlayerShape(player.mode, player.width, player.height, skin.color, skin.secondaryColor);
 
-    ctx.fillRect(-player.width / 2, -player.height / 2, player.width, player.height);
-    ctx.strokeRect(-player.width / 2, -player.height / 2, player.width, player.height);
-
-    // Inner Face details
-    ctx.fillStyle = '#000';
-    ctx.fillRect(-8, -8, 5, 5);
-    ctx.fillRect(3, -8, 5, 5);
-    ctx.fillRect(-6, 4, 12, 3);
-
-    ctx.shadowBlur = 0;
     ctx.restore();
 
     ctx.restore(); // Screen shake restore
@@ -1210,6 +1320,56 @@ function draw() {
         ctx.fillStyle = `rgba(255, 0, 85, ${deathFlash})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         deathFlash -= 0.1;
+    }
+
+    // Check for upcoming portal
+    let upcomingPortal = null;
+    for (let obs of obstacles) {
+        if (obs.type === 'portal' && obs.x > gameDistance && obs.x - gameDistance < 800) {
+            upcomingPortal = obs;
+            break;
+        }
+    }
+
+    if (upcomingPortal && gameState === 'PLAYING') {
+        const portalColor = PORTAL_COLORS[upcomingPortal.portalMode] || '#ffffff';
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+        ctx.strokeStyle = portalColor;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        if (typeof ctx.roundRect === 'function') {
+            ctx.roundRect(canvas.width / 2 - 110, CEILING_HEIGHT + 20, 220, 36, 18);
+        } else {
+            ctx.rect(canvas.width / 2 - 110, CEILING_HEIGHT + 20, 220, 36);
+        }
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = portalColor;
+        ctx.font = '800 14px Outfit';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`NEXT MODE: ${upcomingPortal.portalMode.toUpperCase()}`, canvas.width / 2, CEILING_HEIGHT + 38);
+    }
+
+    // Render Mode Change Center Banner
+    if (transitionBannerTimer > 0 && currentTransitionBanner && gameState === 'PLAYING') {
+        const alpha = Math.min(1.0, transitionBannerTimer / 20);
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+        ctx.fillRect(0, canvas.height / 2 - 50, canvas.width, 100);
+
+        ctx.fillStyle = PORTAL_COLORS[player.mode] || '#ffffff';
+        ctx.shadowColor = PORTAL_COLORS[player.mode] || '#ffffff';
+        ctx.shadowBlur = 20;
+        ctx.font = '900 36px Outfit';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(currentTransitionBanner, canvas.width / 2, canvas.height / 2);
+        ctx.restore();
+
+        transitionBannerTimer--;
     }
 }
 
