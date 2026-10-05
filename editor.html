@@ -57,6 +57,11 @@
                     <span>Objektů: <strong id="objectCount">0</strong></span>
                 </div>
 
+                <!-- On-Screen Touch / Click Jump Button for Playtest -->
+                <div id="playtestJumpOverlay" class="playtest-jump-overlay hidden">
+                    <button id="btnCanvasJump" class="btn-canvas-jump">🦘 SKOK (JUMP)</button>
+                </div>
+
                 <!-- Bot Suite Status Overlay -->
                 <div id="botStatusOverlay" class="bot-overlay-status hidden">
                     <div class="bot-status-item">
@@ -194,7 +199,14 @@
                                 <option value="techno_level1.wav">Cyber Techno Track 1</option>
                                 <option value="techno_level2.wav" selected>Acid Techno Track 2</option>
                                 <option value="techno_level3.wav">Industrial Hell Track 3</option>
+                                <option value="custom">🎵 Vlastní Hudba (Nahraný soubor)</option>
                             </select>
+                        </div>
+
+                        <div class="form-group" id="customAudioGroup">
+                            <label for="customAudioInput">Upload Vlastní Hudby (MP3/WAV)</label>
+                            <input type="file" id="customAudioInput" accept="audio/*" class="form-control" style="font-size: 0.75rem;">
+                            <span id="customAudioStatus" class="custom-audio-status">Žádný vlastní soubor</span>
                         </div>
 
                         <div class="form-group">

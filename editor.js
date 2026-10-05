@@ -18,6 +18,8 @@ const PORTAL_COLORS = {
 // Editor Viewport State
 let cameraX = 0;
 let cameraY = 0;
+let customAudioUrl = null;
+let bgAudioPlayer = new Audio();
 let zoom = 1.0;
 let isPanning = false;
 let startPanX = 0;
@@ -45,6 +47,7 @@ let currentLevel = {
 // Playtest & Bot Simulation State
 let editorMode = 'EDIT'; // 'EDIT', 'PLAYTEST', 'BOT_TEST'
 let playtestState = null;
+let idleBotState = null;
 let botSuiteState = null;
 let botSimulationSpeed = 1;
 let animFrameId = null;
@@ -203,6 +206,20 @@ function setupEventListeners() {
     musicSelect.addEventListener('change', updateLevelFromUI);
     levelLengthInput.addEventListener('input', updateLevelFromUI);
 
+    const customAudioInput = document.getElementById('customAudioInput');
+    const customAudioStatus = document.getElementById('customAudioStatus');
+    if (customAudioInput) {
+        customAudioInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                customAudioUrl = URL.createObjectURL(file);
+                if (customAudioStatus) customAudioStatus.textContent = `Nahráno: ${file.name}`;
+                musicSelect.value = 'custom';
+                currentLevel.music = 'custom';
+            }
+        });
+    }
+
     // Save & Load DB
     document.getElementById('btnSaveDb').addEventListener('click', () => {
         updateLevelFromUI();
@@ -245,6 +262,27 @@ function setupEventListeners() {
         reader.readAsText(file);
         e.target.value = '';
     });
+
+    // On-screen jump button
+    const btnCanvasJump = document.getElementById('btnCanvasJump');
+    if (btnCanvasJump) {
+        const triggerJumpStart = (e) => {
+            e.preventDefault();
+            if (playtestState) playtestState.jumpPressed = true;
+        };
+        const triggerJumpEnd = (e) => {
+            e.preventDefault();
+            if (playtestState) {
+                playtestState.jumpPressed = false;
+                playtestState.jumpProcessed = false;
+            }
+        };
+
+        btnCanvasJump.addEventListener('mousedown', triggerJumpStart);
+        btnCanvasJump.addEventListener('mouseup', triggerJumpEnd);
+        btnCanvasJump.addEventListener('touchstart', triggerJumpStart);
+        btnCanvasJump.addEventListener('touchend', triggerJumpEnd);
+    }
 
     // Playtest & Bot Test Buttons
     document.getElementById('btnTestYourself').addEventListener('click', togglePlaytest);
@@ -402,15 +440,33 @@ function togglePlaytest() {
     if (editorMode === 'PLAYTEST') {
         editorMode = 'EDIT';
         playtestState = null;
-        document.getElementById('btnTestYourself').textContent = '🎮 Test Yourself';
+        document.getElementById('btnTestYourself').textContent = '🎮 Hráč Test';
         document.getElementById('btnTestYourself').classList.remove('active');
+        document.getElementById('playtestJumpOverlay').classList.add('hidden');
+        if (bgAudioPlayer) {
+            bgAudioPlayer.pause();
+            bgAudioPlayer.currentTime = 0;
+        }
         return;
     }
 
     updateLevelFromUI();
     editorMode = 'PLAYTEST';
-    document.getElementById('btnTestYourself').textContent = '⏹️ Stop Playtest';
+    idleBotState = null; // Disable auto-bot when testing manually
+    document.getElementById('btnTestYourself').textContent = '⏹️ Zastavit Test';
     document.getElementById('btnTestYourself').classList.add('active');
+    document.getElementById('playtestJumpOverlay').classList.remove('hidden');
+
+    // Start background music
+    if (currentLevel.music === 'custom' && customAudioUrl) {
+        bgAudioPlayer.src = customAudioUrl;
+        bgAudioPlayer.loop = true;
+        bgAudioPlayer.play().catch(() => {});
+    } else if (currentLevel.music) {
+        bgAudioPlayer.src = currentLevel.music;
+        bgAudioPlayer.loop = true;
+        bgAudioPlayer.play().catch(() => {});
+    }
 
     playtestState = {
         x: 150,
@@ -483,12 +539,168 @@ function stopBotTest() {
     document.getElementById('botStatusOverlay').classList.add('hidden');
 }
 
+// Idle Auto-Bot Simulation for Background Canvas
+function updateIdleBotPhysics() {
+    if (editorMode !== 'EDIT') return;
+
+    if (!idleBotState || idleBotState.dead || idleBotState.distance >= (currentLevel.totalLength || 20000)) {
+        idleBotState = {
+            x: 150,
+            y: canvas.height - GROUND_HEIGHT - 40,
+            w: 40,
+            h: 40,
+            vy: 0,
+            mode: currentLevel.initialMode || 'cube',
+            isGrounded: true,
+            gravityDir: 1,
+            rotation: 0,
+            distance: currentLevel.startPos || 0,
+            jumpPressed: false,
+            jumpProcessed: false,
+            dead: false,
+            lookAhead: 100
+        };
+    }
+
+    const b = idleBotState;
+    b.distance += currentLevel.speed;
+
+    // Mode Portals
+    currentLevel.obstacles.forEach(obs => {
+        if (obs.type === 'portal') {
+            if (Math.abs(b.distance - obs.x) < currentLevel.speed) {
+                b.mode = obs.mode;
+            }
+        }
+    });
+
+    // Auto-Bot Solver Logic
+    let shouldJump = false;
+    currentLevel.obstacles.forEach(obs => {
+        if (obs.x - b.distance > 0 && obs.x - b.distance < b.lookAhead) {
+            if (obs.type === 'spike' || obs.type === 'block' || obs.type === 'yellow_ring') {
+                shouldJump = true;
+            }
+        }
+    });
+
+    if (b.mode === 'ship' || b.mode === 'wave') {
+        if (b.y > canvas.height - GROUND_HEIGHT - 70) shouldJump = true;
+        if (b.y < CEILING_HEIGHT + 70) shouldJump = false;
+    }
+
+    b.jumpPressed = shouldJump;
+
+    // Physics
+    const GRAVITY = 0.8;
+    const JUMP_FORCE = -12;
+
+    if (b.mode === 'cube') {
+        b.vy += GRAVITY;
+        if (b.jumpPressed && b.isGrounded) {
+            b.vy = JUMP_FORCE;
+            b.isGrounded = false;
+        }
+        b.rotation += 0.15;
+    } else if (b.mode === 'ship') {
+        if (b.jumpPressed) b.vy -= 0.6; else b.vy += 0.4;
+        b.vy = Math.max(-8, Math.min(8, b.vy));
+        b.rotation = b.vy * 0.05;
+    } else if (b.mode === 'ball') {
+        b.vy += GRAVITY * b.gravityDir;
+        if (b.jumpPressed && !b.jumpProcessed && b.isGrounded) {
+            b.gravityDir *= -1;
+            b.isGrounded = false;
+            b.jumpProcessed = true;
+        }
+        b.rotation += 0.15 * b.gravityDir;
+    } else if (b.mode === 'ufo') {
+        b.vy += GRAVITY * 0.8;
+        if (b.jumpPressed && !b.jumpProcessed) {
+            b.vy = JUMP_FORCE * 0.75;
+            b.jumpProcessed = true;
+        }
+        b.rotation = b.vy * 0.03;
+    } else if (b.mode === 'wave') {
+        if (b.jumpPressed) b.vy = -currentLevel.speed * 0.8; else b.vy = currentLevel.speed * 0.8;
+        b.rotation = b.jumpPressed ? -0.4 : 0.4;
+    }
+
+    b.y += b.vy;
+
+    const groundY = canvas.height - GROUND_HEIGHT - b.h;
+    if (b.y >= groundY) {
+        b.y = groundY;
+        b.vy = 0;
+        b.isGrounded = true;
+    } else if (b.y <= CEILING_HEIGHT) {
+        b.y = CEILING_HEIGHT;
+        b.vy = 0;
+    }
+
+    // Check Obstacle Collisions
+    currentLevel.obstacles.forEach(obs => {
+        const obsScreenX = obs.x - b.distance + b.x;
+        const obsY = canvas.height - GROUND_HEIGHT - obs.y - obs.h;
+
+        if (obsScreenX > b.x - 50 && obsScreenX < b.x + 50) {
+            if (obs.type === 'yellow_pad' || obs.type === 'magenta_pad') {
+                if (b.x + b.w > obsScreenX && b.x < obsScreenX + obs.w && b.y + b.h >= obsY) {
+                    b.vy = JUMP_FORCE * 1.2;
+                    b.isGrounded = false;
+                }
+            } else if (obs.type === 'spike') {
+                const margin = 8;
+                if (b.x + margin < obsScreenX + obs.w - margin && b.x + b.w - margin > obsScreenX + margin &&
+                    b.y + margin < obsY + obs.h - margin && b.y + b.h - margin > obsY + margin) {
+                    b.dead = true;
+                }
+            } else if (obs.type === 'block') {
+                if (b.x + b.w > obsScreenX && b.x < obsScreenX + obs.w) {
+                    if (b.y + b.h >= obsY && b.y + b.h <= obsY + 25 && b.vy >= 0) {
+                        b.y = obsY - b.h;
+                        b.vy = 0;
+                        b.isGrounded = true;
+                        return;
+                    }
+                }
+                const sideMargin = 6;
+                if (b.x + b.w - sideMargin > obsScreenX && b.x + sideMargin < obsScreenX + obs.w &&
+                    b.y + b.h - sideMargin > obsY && b.y + sideMargin < obsY + obs.h) {
+                    b.dead = true;
+                }
+            }
+        }
+    });
+}
+
+function renderIdleBot() {
+    if (!idleBotState || idleBotState.dead) return;
+
+    const b = idleBotState;
+    const screenX = worldToScreen(b.distance, 0).x;
+
+    ctx.save();
+    ctx.translate(screenX + b.w / 2, b.y + b.h / 2);
+    ctx.rotate(b.rotation);
+
+    ctx.fillStyle = 'rgba(0, 240, 255, 0.4)';
+    ctx.strokeStyle = '#00f0ff';
+    ctx.lineWidth = 2;
+    ctx.fillRect(-b.w / 2, -b.h / 2, b.w, b.h);
+    ctx.strokeRect(-b.w / 2, -b.h / 2, b.w, b.h);
+
+    ctx.restore();
+}
+
 // Main Editor Render & Physics Loop
 function editorLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (editorMode === 'EDIT') {
+        updateIdleBotPhysics();
         renderGridAndLevel();
+        renderIdleBot();
     } else if (editorMode === 'PLAYTEST') {
         updatePlaytestPhysics();
         renderPlaytest();
