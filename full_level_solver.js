@@ -2,13 +2,11 @@ const { GameSimulator, MODES } = require('./sim_engine.js');
 
 function cloneSim(s) {
     let copy = new GameSimulator();
-    copy.player = { ...s.player };
+    copy.player = new (require('./sim_engine.js').SimPlayer)();
+    Object.assign(copy.player, s.player);
     copy.obstacles = s.obstacles;
     copy.transitions = s.transitions;
-    copy.gameDistance = s.gameDistance;
-    copy.jumpPressed = s.jumpPressed;
-    copy.jumpProcessed = s.jumpProcessed;
-    copy.dead = s.dead;
+    copy.speed = s.speed;
     return copy;
 }
 

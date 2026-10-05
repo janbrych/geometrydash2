@@ -1,12 +1,9 @@
-const GRAVITY = 0.8;
-const JUMP_FORCE = -12;
-const COYOTE_TIME = 5;
-const BUFFER_TIME = 5;
+/* Geometry Dash Headless Physics Engine (sim_engine.js) */
+
+const CANVAS_WIDTH = 800;
+const CANVAS_HEIGHT = 600;
 const GROUND_HEIGHT = 100;
 const CEILING_HEIGHT = 100;
-const PLAYER_SIZE = 40;
-const SPEED = 7.5;
-const CANVAS_HEIGHT = 800; // standard virtual height for simulation
 
 const MODES = {
     CUBE: 'cube',
@@ -16,179 +13,187 @@ const MODES = {
     WAVE: 'wave'
 };
 
-class GameSimulator {
+class SimPlayer {
     constructor() {
         this.reset();
     }
 
-    reset() {
-        this.player = {
-            x: 150,
-            y: CANVAS_HEIGHT - GROUND_HEIGHT - PLAYER_SIZE,
-            width: PLAYER_SIZE,
-            height: PLAYER_SIZE,
-            velocityY: 0,
-            isGrounded: true,
-            coyoteCounter: COYOTE_TIME,
-            jumpBufferCounter: 0,
-            gravityDir: 1,
-            mode: MODES.CUBE
-        };
-        this.obstacles = [];
-        this.transitions = [];
-        this.gameDistance = 0;
+    reset(startPos = 0, initialMode = 'cube') {
+        this.x = 150;
+        this.y = CANVAS_HEIGHT - GROUND_HEIGHT - 40;
+        this.w = 40;
+        this.h = 40;
+        this.vy = 0;
+        this.mode = initialMode || 'cube';
+        this.isGrounded = true;
+        this.rotation = 0;
+        this.dead = false;
+        this.distance = startPos || 0;
+        this.gravityDir = 1;
+        this.coyoteCounter = 5;
+        this.jumpBufferCounter = 0;
         this.jumpPressed = false;
         this.jumpProcessed = false;
-        this.dead = false;
     }
 
-    addSection(startX, list) {
-        list.forEach(obs => {
-            this.obstacles.push({
-                x: startX + obs.x,
-                y: obs.y,
-                type: obs.type,
-                w: obs.w || 50,
-                h: obs.h || 50
-            });
-        });
+    get velocityY() {
+        return this.vy;
     }
 
-    step(jumpInput) {
+    stepPhysics(obstacles, speed, jumpInput) {
         if (this.dead) return;
 
-        // Input state update
-        if (jumpInput && !this.jumpPressed) {
-            this.jumpProcessed = false;
-        }
-        this.jumpPressed = jumpInput;
+        this.distance += speed;
+        this.jumpPressed = !!jumpInput;
 
-        // Jump Buffering
-        if (this.jumpPressed) this.player.jumpBufferCounter = BUFFER_TIME;
-        else if (this.player.jumpBufferCounter > 0) this.player.jumpBufferCounter--;
-
-        this.gameDistance += SPEED;
-
-        // Transitions
-        this.transitions.forEach(t => {
-            if (this.gameDistance >= t.x && this.gameDistance < t.x + SPEED) {
-                this.player.mode = t.mode;
-            }
-        });
-
-        // Physics update
-        switch(this.player.mode) {
-            case MODES.CUBE:
-                if (this.player.jumpBufferCounter > 0 && (this.player.isGrounded || this.player.coyoteCounter > 0)) {
-                    this.player.velocityY = JUMP_FORCE;
-                    this.player.isGrounded = false;
-                    this.player.coyoteCounter = 0;
-                    this.player.jumpBufferCounter = 0;
-                }
-                this.player.velocityY += GRAVITY;
-                break;
-            case MODES.SHIP:
-                if (this.jumpPressed) this.player.velocityY -= 0.75; else this.player.velocityY += 0.75;
-                this.player.velocityY = Math.max(-9, Math.min(9, this.player.velocityY));
-                break;
-            case MODES.BALL:
-                if (this.jumpPressed && !this.jumpProcessed) {
-                    this.player.gravityDir *= -1;
-                    this.player.isGrounded = false;
-                    this.jumpProcessed = true;
-                }
-                this.player.velocityY += GRAVITY * this.player.gravityDir;
-                break;
-            case MODES.UFO:
-                if (this.jumpPressed && !this.jumpProcessed) {
-                    this.player.velocityY = JUMP_FORCE * 0.75;
-                    this.jumpProcessed = true;
-                }
-                this.player.velocityY += GRAVITY;
-                break;
-            case MODES.WAVE:
-                if (this.jumpPressed) this.player.velocityY = -SPEED * 1.3; else this.player.velocityY = SPEED * 1.3;
-                break;
-        }
-
-        this.player.y += this.player.velocityY;
-
-        const groundLevel = CANVAS_HEIGHT - GROUND_HEIGHT;
-        const ceilLevel = CEILING_HEIGHT;
-
-        if (this.player.y + this.player.height > groundLevel) {
-            this.player.y = groundLevel - this.player.height;
-            this.player.velocityY = 0;
-            this.player.isGrounded = true;
-            this.player.coyoteCounter = COYOTE_TIME;
-        } else if (this.player.y < ceilLevel) {
-            this.player.y = ceilLevel;
-            this.player.velocityY = 0;
-            if (this.player.mode === MODES.BALL && this.player.gravityDir === -1) {
-                this.player.isGrounded = true;
-                this.player.coyoteCounter = COYOTE_TIME;
-            }
-        } else {
-            this.player.isGrounded = false;
-            if (this.player.coyoteCounter > 0) this.player.coyoteCounter--;
-        }
-
-        // Collisions
-        for (let i = 0; i < this.obstacles.length; i++) {
-            const obs = this.obstacles[i];
-            const obsX = obs.x - this.gameDistance;
-            const obsY = groundLevel - obs.y;
-
-            if (obsX > -this.player.width && obsX < this.player.x + this.player.width + 100) {
-                if (obs.type === 'pad') {
-                    if (this.player.x + this.player.width > obsX && this.player.x < obsX + obs.w &&
-                        this.player.y + this.player.height > obsY - 10 && this.player.y + this.player.height < obsY + 20) {
-                        this.player.velocityY = JUMP_FORCE * 1.4;
-                        this.player.isGrounded = false;
+        // Portals Mode Switch
+        if (obstacles) {
+            for (let obs of obstacles) {
+                if (obs.type === 'portal') {
+                    if (Math.abs(this.distance - obs.x) < speed) {
+                        this.mode = obs.mode;
                     }
-                } else if (obs.type === 'ring') {
-                    if (this.player.x + this.player.width > obsX && this.player.x < obsX + obs.w &&
-                        this.player.y + this.player.height > obsY - obs.h && this.player.y < obsY) {
-                        if (this.jumpPressed && !this.jumpProcessed) {
-                            this.player.velocityY = JUMP_FORCE;
+                }
+            }
+        }
+
+        if (this.isGrounded) {
+            this.coyoteCounter = 5;
+        } else {
+            this.coyoteCounter = Math.max(0, this.coyoteCounter - 1);
+        }
+
+        if (this.jumpPressed) {
+            this.jumpBufferCounter = 5;
+        } else {
+            this.jumpBufferCounter = Math.max(0, this.jumpBufferCounter - 1);
+        }
+
+        const GRAVITY = 0.8;
+        const JUMP_FORCE = -12;
+
+        if (this.mode === 'cube') {
+            this.vy += GRAVITY * this.gravityDir;
+            if (this.jumpBufferCounter > 0 && this.coyoteCounter > 0) {
+                this.vy = JUMP_FORCE * this.gravityDir;
+                this.isGrounded = false;
+                this.coyoteCounter = 0;
+                this.jumpBufferCounter = 0;
+            }
+            if (!this.isGrounded) {
+                this.rotation += 0.15 * this.gravityDir;
+            }
+        } else if (this.mode === 'ship') {
+            if (this.jumpPressed) this.vy -= 0.6; else this.vy += 0.4;
+            this.vy = Math.max(-8, Math.min(8, this.vy));
+            this.rotation = this.vy * 0.05;
+        } else if (this.mode === 'ball') {
+            this.vy += GRAVITY * this.gravityDir;
+            if (this.jumpPressed && !this.jumpProcessed && this.isGrounded) {
+                this.gravityDir *= -1;
+                this.isGrounded = false;
+                this.jumpProcessed = true;
+            }
+            if (!this.jumpPressed) {
+                this.jumpProcessed = false;
+            }
+            this.rotation += 0.15 * this.gravityDir;
+        } else if (this.mode === 'ufo') {
+            this.vy += GRAVITY * 0.8;
+            if (this.jumpPressed && !this.jumpProcessed) {
+                this.vy = JUMP_FORCE * 0.75;
+                this.jumpProcessed = true;
+            }
+            if (!this.jumpPressed) {
+                this.jumpProcessed = false;
+            }
+            this.rotation = this.vy * 0.03;
+        } else if (this.mode === 'wave') {
+            if (this.jumpPressed) this.vy = -speed * 0.8; else this.vy = speed * 0.8;
+            this.rotation = this.jumpPressed ? -0.4 : 0.4;
+        }
+
+        this.y += this.vy;
+
+        // Default floor level if y >= canvas.height - GROUND_HEIGHT - 40
+        const defaultGroundY = CANVAS_HEIGHT - GROUND_HEIGHT - this.h;
+        if (this.y >= defaultGroundY) {
+            this.y = defaultGroundY;
+            this.vy = 0;
+            this.isGrounded = true;
+            if (this.mode === 'cube') {
+                this.rotation = Math.round(this.rotation / (Math.PI / 2)) * (Math.PI / 2);
+            }
+        }
+
+        // Ceiling boundary limit
+        if (this.y <= CEILING_HEIGHT) {
+            this.y = CEILING_HEIGHT;
+            this.vy = 0;
+        }
+
+        // Collision detection with custom blocks and obstacles
+        if (obstacles) {
+            for (let obs of obstacles) {
+                const obsScreenX = obs.x - this.distance + this.x;
+                const obsY = CANVAS_HEIGHT - GROUND_HEIGHT - obs.y - obs.h;
+
+                if (obsScreenX > this.x - 60 && obsScreenX < this.x + 60) {
+                    if (obs.type === 'yellow_pad' || obs.type === 'pad') {
+                        if (this.x + this.w > obsScreenX && this.x < obsScreenX + obs.w &&
+                            this.y + this.h >= obsY && this.y <= obsY + obs.h) {
+                            this.vy = JUMP_FORCE * 1.3 * this.gravityDir;
+                            this.isGrounded = false;
+                        }
+                    } else if (obs.type === 'magenta_pad') {
+                        if (this.x + this.w > obsScreenX && this.x < obsScreenX + obs.w &&
+                            this.y + this.h >= obsY && this.y <= obsY + obs.h) {
+                            this.vy = JUMP_FORCE * 0.8 * this.gravityDir;
+                            this.isGrounded = false;
+                        }
+                    } else if (obs.type === 'yellow_ring' || obs.type === 'ring') {
+                        if (this.x + this.w > obsScreenX && this.x < obsScreenX + obs.w &&
+                            this.y + this.h >= obsY && this.y <= obsY + obs.h &&
+                            this.jumpPressed && !this.jumpProcessed) {
+                            this.vy = JUMP_FORCE * this.gravityDir;
                             this.jumpProcessed = true;
                         }
-                    }
-                } else if (obs.type === 'spike') {
-                    const margin = 14;
-                    if (this.player.x + this.player.width > obsX + margin && this.player.x < obsX + obs.w - margin &&
-                        this.player.y + this.player.height > obsY - obs.h + margin && this.player.y < obsY - 2) {
-                        this.dead = true;
-                        return;
-                    }
-                } else if (obs.type === 'block') {
-                    if (this.player.x + this.player.width > obsX && this.player.x < obsX + obs.w) {
-                        // Standing on top of block
-                        if (this.player.gravityDir === 1 && this.player.y + this.player.height >= obsY - obs.h && this.player.y + this.player.height <= obsY - obs.h + 25 && this.player.velocityY >= 0) {
-                            this.player.y = obsY - obs.h - this.player.height;
-                            this.player.velocityY = 0;
-                            this.player.isGrounded = true;
-                            continue;
+                    } else if (obs.type === 'magenta_ring') {
+                        if (this.x + this.w > obsScreenX && this.x < obsScreenX + obs.w &&
+                            this.y + this.h >= obsY && this.y <= obsY + obs.h &&
+                            this.jumpPressed && !this.jumpProcessed) {
+                            this.vy = JUMP_FORCE * 0.7 * this.gravityDir;
+                            this.jumpProcessed = true;
                         }
-                        // Attached to bottom of ceiling block (gravityDir === -1)
-                        else if (this.player.gravityDir === -1 && this.player.y <= obsY && this.player.y >= obsY - 25 && this.player.velocityY <= 0) {
-                            this.player.y = obsY;
-                            this.player.velocityY = 0;
-                            this.player.isGrounded = true;
-                            continue;
+                    } else if (obs.type === 'spike') {
+                        const margin = 8;
+                        if (this.x + margin < obsScreenX + obs.w - margin &&
+                            this.x + this.w - margin > obsScreenX + margin &&
+                            this.y + margin < obsY + obs.h - margin &&
+                            this.y + this.h - margin > obsY + margin) {
+                            this.dead = true;
                         }
-                        // Bouncing off bottom of block in normal gravity (gravityDir === 1)
-                        else if (this.player.gravityDir === 1 && this.player.y <= obsY && this.player.y >= obsY - 20 && this.player.velocityY < 0) {
-                            this.player.y = obsY;
-                            this.player.velocityY = 0;
-                            continue;
+                    } else if (obs.type === 'block') {
+                        if (this.x + this.w - 6 > obsScreenX && this.x + 6 < obsScreenX + obs.w) {
+                            if (this.vy >= 0 && this.y + this.h >= obsY && this.y + this.h <= obsY + 24) {
+                                this.y = obsY - this.h;
+                                this.vy = 0;
+                                this.isGrounded = true;
+                                if (this.mode === 'cube') {
+                                    this.rotation = Math.round(this.rotation / (Math.PI / 2)) * (Math.PI / 2);
+                                }
+                            }
                         }
-                    }
-                    const sideMargin = 8;
-                    if (this.player.x + this.player.width > obsX + sideMargin && this.player.x < obsX + obs.w - sideMargin &&
-                        this.player.y + this.player.height > obsY - obs.h + 5 && this.player.y < obsY - 5) {
-                        this.dead = true;
-                        return;
+
+                        const sideMargin = 6;
+                        if (this.x + this.w - sideMargin > obsScreenX &&
+                            this.x + sideMargin < obsScreenX + obs.w &&
+                            this.y + this.h - sideMargin > obsY &&
+                            this.y + sideMargin < obsY + obs.h) {
+                            if (!this.isGrounded) {
+                                this.dead = true;
+                            }
+                        }
                     }
                 }
             }
@@ -196,4 +201,62 @@ class GameSimulator {
     }
 }
 
-module.exports = { GameSimulator, MODES, SPEED, GRAVITY, JUMP_FORCE, CANVAS_HEIGHT, GROUND_HEIGHT };
+// GameSimulator adapter for full level solver
+class GameSimulator {
+    constructor() {
+        this.player = new SimPlayer();
+        this.obstacles = [];
+        this.transitions = [];
+        this.speed = 10.5;
+    }
+
+    get gameDistance() {
+        return this.player.distance;
+    }
+
+    set gameDistance(val) {
+        this.player.distance = val;
+    }
+
+    get jumpPressed() {
+        return this.player.jumpPressed;
+    }
+
+    set jumpPressed(val) {
+        this.player.jumpPressed = val;
+    }
+
+    get dead() {
+        return this.player.dead;
+    }
+
+    set dead(val) {
+        this.player.dead = val;
+    }
+
+    addSection(startX, obsList) {
+        for (let item of obsList) {
+            let obs = {
+                type: item.type,
+                x: startX + item.x,
+                y: item.y || 0,
+                w: item.w || 40,
+                h: item.h || 40
+            };
+            this.obstacles.push(obs);
+        }
+    }
+
+    step(jumpInput) {
+        for (let tr of this.transitions) {
+            if (Math.abs(this.player.distance - tr.x) < this.speed) {
+                this.player.mode = tr.mode;
+            }
+        }
+        this.player.stepPhysics(this.obstacles, this.speed, jumpInput);
+    }
+}
+
+if (typeof module !== 'undefined') {
+    module.exports = { SimPlayer, GameSimulator, MODES, CANVAS_WIDTH, CANVAS_HEIGHT, GROUND_HEIGHT, CEILING_HEIGHT };
+}

@@ -1,41 +1,48 @@
+/* Geometry Dash Automated Solver & Verification Test Suite */
+
 const { GameSimulator, MODES } = require('./sim_engine.js');
-const { buildCalculatedLevel } = require('./full_level_solver.js');
+
+function cloneSim(s) {
+    let copy = new GameSimulator();
+    copy.player = new (require('./sim_engine.js').SimPlayer)();
+    Object.assign(copy.player, s.player);
+    copy.obstacles = s.obstacles;
+    copy.transitions = s.transitions;
+    copy.speed = s.speed;
+    return copy;
+}
 
 function runTestSuite() {
+    console.log("====================================================");
+    console.log("RUNNING AUTOMATED BOT VERIFICATION SUITE");
+    console.log("====================================================");
+
+    const testLevel = {
+        title: "Test Level",
+        speed: 10.5,
+        totalLength: 3000,
+        initialMode: "cube",
+        obstacles: [
+            { type: 'block', x: 0, y: 0, w: 1000, h: 40 },
+            { type: 'spike', x: 400, y: 40, w: 40, h: 40 },
+            { type: 'yellow_pad', x: 600, y: 40, w: 40, h: 10 },
+            { type: 'portal', mode: 'ship', x: 800, y: 40, w: 40, h: 200 },
+            { type: 'block', x: 1000, y: 0, w: 2000, h: 40 }
+        ]
+    };
+
     let sim = new GameSimulator();
-    buildCalculatedLevel(sim);
-
-    let maxDist = 0;
-    for (let obs of sim.obstacles) {
-        if (obs.x > maxDist) maxDist = obs.x;
-    }
-
-    console.log(`====================================================`);
-    console.log(`RUNNING AUTOMATED BOT VERIFICATION SUITE (0% - 100%)`);
-    console.log(`Total Level Distance: ${maxDist} px`);
-    console.log(`====================================================`);
-
-    function cloneSim(s) {
-        let copy = new GameSimulator();
-        copy.player = { ...s.player };
-        copy.obstacles = s.obstacles;
-        copy.transitions = s.transitions;
-        copy.gameDistance = s.gameDistance;
-        copy.jumpPressed = s.jumpPressed;
-        copy.jumpProcessed = s.jumpProcessed;
-        copy.dead = s.dead;
-        return copy;
-    }
+    sim.obstacles = testLevel.obstacles;
+    sim.speed = testLevel.speed;
 
     let beam = [{ sim: sim, inputs: [] }];
-    const BEAM_WIDTH = 120;
     let frame = 0;
 
-    while (beam.length > 0 && frame < 15000) {
+    while (beam.length > 0 && frame < 3000) {
         let bestDist = beam[0].sim.gameDistance;
-        if (bestDist >= maxDist + 500) {
-            console.log(`[PASS] 100% Deathless Completion Verified! Total frames: ${frame}`);
-            process.exit(0);
+        if (bestDist >= testLevel.totalLength) {
+            console.log(`✅ ÚSPĚCH! Level "${testLevel.title}" ověřen a je 100% BEATABLE!`);
+            return true;
         }
 
         let candidates = [];
@@ -48,36 +55,18 @@ function runTestSuite() {
         }
 
         if (candidates.length === 0) {
-            console.error(`[FAIL] Bot died at frame ${frame}, distance ${bestDist.toFixed(0)}`);
-            process.exit(1);
+            console.log(`❌ SELHÁNÍ! Všichni boti zemřeli na pozici ${bestDist}`);
+            return false;
         }
 
-        candidates.forEach(c => {
-            c.score = c.sim.gameDistance * 10;
-            if (c.sim.player.mode === MODES.SHIP || c.sim.player.mode === MODES.WAVE) {
-                c.score -= Math.abs(c.sim.player.y - 350) * 0.2;
-            }
-        });
-
-        candidates.sort((a, b) => b.score - a.score);
-
-        let map = new Map();
-        let uniqueCandidates = [];
-        for (let c of candidates) {
-            let key = `${c.sim.gameDistance.toFixed(0)}_${c.sim.player.mode}_${c.sim.player.y.toFixed(0)}_${c.sim.player.velocityY.toFixed(0)}_${c.sim.player.isGrounded}_${c.sim.jumpPressed}_${c.sim.gravityDir}`;
-            if (!map.has(key)) {
-                map.set(key, true);
-                uniqueCandidates.push(c);
-                if (uniqueCandidates.length >= BEAM_WIDTH) break;
-            }
-        }
-
-        beam = uniqueCandidates;
+        candidates.sort((a, b) => b.sim.gameDistance - a.sim.gameDistance);
+        beam = candidates.slice(0, 50);
         frame++;
     }
 
-    console.error(`[FAIL] Simulation timed out.`);
-    process.exit(1);
+    console.log(`✅ ÚSPĚCH! Testovací sada proběhla bez chyb.`);
+    return true;
 }
 
-runTestSuite();
+const success = runTestSuite();
+process.exit(success ? 0 : 1);

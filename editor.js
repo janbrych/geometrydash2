@@ -28,7 +28,7 @@ let showGrid = true;
 
 // Tool & Selection State
 let currentTool = 'draw'; // 'draw', 'erase'
-let selectedObjectType = 'block'; // 'block', 'spike', 'spike_ceiling', 'yellow_pad', 'yellow_ring', 'magenta_pad', 'magenta_ring', 'coin', 'portal'
+let selectedObjectType = 'block'; // 'block', 'spike', 'spike_ceiling', 'yellow_pad', 'yellow_ring', 'magenta_pad', 'magenta_ring', 'coin', 'portal', 'start_marker', 'finish_marker'
 let selectedPortalMode = 'ship';
 
 // Current Level Data
@@ -46,11 +46,10 @@ let currentLevel = {
 
 // Playtest & Bot Simulation State
 let editorMode = 'EDIT'; // 'EDIT', 'PLAYTEST', 'BOT_TEST'
-let playtestState = null;
-let idleBotState = null;
+let playtestPlayer = null;
+let idleBotPlayer = null;
 let botSuiteState = null;
 let botSimulationSpeed = 1;
-let animFrameId = null;
 
 // UI Elements
 const levelTitleInput = document.getElementById('levelTitleInput');
@@ -89,6 +88,8 @@ function snapToGrid(val) {
 function initEditor() {
     setupEventListeners();
     updateUIFromLevel();
+    idleBotPlayer = new SimPlayer();
+    idleBotPlayer.reset(currentLevel.startPos || 0, currentLevel.initialMode || 'cube');
     requestAnimationFrame(editorLoop);
 }
 
@@ -157,11 +158,9 @@ function setupEventListeners() {
     canvas.addEventListener('wheel', (e) => {
         e.preventDefault();
         if (e.ctrlKey) {
-            // Zoom
             const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
             zoom = Math.max(0.3, Math.min(3.0, zoom * zoomFactor));
         } else {
-            // Horizontal Pan
             cameraX -= e.deltaY;
         }
     }, { passive: false });
@@ -256,6 +255,7 @@ function setupEventListeners() {
             if (imported) {
                 currentLevel = imported;
                 updateUIFromLevel();
+                if (idleBotPlayer) idleBotPlayer.reset(currentLevel.startPos || 0, currentLevel.initialMode || 'cube');
                 alert(`Level "${imported.title}" byl úspěšně importován!`);
             }
         };
@@ -268,14 +268,11 @@ function setupEventListeners() {
     if (btnCanvasJump) {
         const triggerJumpStart = (e) => {
             e.preventDefault();
-            if (playtestState) playtestState.jumpPressed = true;
+            if (playtestPlayer) playtestPlayer._manualJump = true;
         };
         const triggerJumpEnd = (e) => {
             e.preventDefault();
-            if (playtestState) {
-                playtestState.jumpPressed = false;
-                playtestState.jumpProcessed = false;
-            }
+            if (playtestPlayer) playtestPlayer._manualJump = false;
         };
 
         btnCanvasJump.addEventListener('mousedown', triggerJumpStart);
@@ -293,7 +290,7 @@ function setupEventListeners() {
     window.addEventListener('keydown', (e) => {
         if (editorMode === 'PLAYTEST') {
             if (e.code === 'Space' || e.code === 'ArrowUp') {
-                if (playtestState) playtestState.jumpPressed = true;
+                if (playtestPlayer) playtestPlayer._manualJump = true;
             } else if (e.code === 'Escape') {
                 togglePlaytest();
             }
@@ -303,10 +300,7 @@ function setupEventListeners() {
     window.addEventListener('keyup', (e) => {
         if (editorMode === 'PLAYTEST') {
             if (e.code === 'Space' || e.code === 'ArrowUp') {
-                if (playtestState) {
-                    playtestState.jumpPressed = false;
-                    playtestState.jumpProcessed = false;
-                }
+                if (playtestPlayer) playtestPlayer._manualJump = false;
             }
         }
     });
@@ -318,7 +312,7 @@ function setTool(tool) {
     document.getElementById('btnToolErase').classList.toggle('active', tool === 'erase');
 }
 
-// Canvas Click Handler (Add / Remove Obstacle)
+// Canvas Click Handler
 function handleCanvasClick(e) {
     const rect = canvas.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
@@ -326,8 +320,6 @@ function handleCanvasClick(e) {
     const world = screenToWorld(mouseX, mouseY);
 
     const groundY = canvas.height - GROUND_HEIGHT;
-
-    // Convert Y relative to floor
     const relativeY = groundY - world.y;
     const gridX = snapToGrid(world.x);
     const gridY = snapToGrid(relativeY);
@@ -335,7 +327,6 @@ function handleCanvasClick(e) {
     if (gridX < 0) return;
 
     if (currentTool === 'erase') {
-        // Remove object at grid location
         currentLevel.obstacles = currentLevel.obstacles.filter(obs => {
             return !(Math.abs(obs.x - gridX) < 10 && Math.abs(obs.y - gridY) < 10);
         });
@@ -346,6 +337,7 @@ function handleCanvasClick(e) {
     if (currentTool === 'draw') {
         if (selectedObjectType === 'start_marker') {
             currentLevel.startPos = Math.max(0, gridX);
+            if (idleBotPlayer) idleBotPlayer.reset(currentLevel.startPos, currentLevel.initialMode || 'cube');
             return;
         }
 
@@ -355,7 +347,6 @@ function handleCanvasClick(e) {
             return;
         }
 
-        // Check if object already exists at location
         const exists = currentLevel.obstacles.some(obs => Math.abs(obs.x - gridX) < 10 && Math.abs(obs.y - gridY) < 10);
         if (exists) return;
 
@@ -370,10 +361,8 @@ function handleCanvasClick(e) {
         if (selectedObjectType === 'spike_ceiling') {
             newObj.type = 'spike';
             newObj.ceiling = true;
-            newObj.y = canvas.height - GROUND_HEIGHT - CEILING_HEIGHT;
         } else if (selectedObjectType === 'yellow_pad' || selectedObjectType === 'magenta_pad') {
             newObj.h = 10;
-            newObj.y = 0;
         } else if (selectedObjectType === 'yellow_ring' || selectedObjectType === 'magenta_ring' || selectedObjectType === 'coin') {
             newObj.w = 30;
             newObj.h = 30;
@@ -414,6 +403,7 @@ function openDbModal() {
             item.querySelector('.btn-load-lvl').addEventListener('click', () => {
                 currentLevel = lvl;
                 updateUIFromLevel();
+                if (idleBotPlayer) idleBotPlayer.reset(currentLevel.startPos || 0, currentLevel.initialMode || 'cube');
                 closeDbModal();
             });
 
@@ -439,7 +429,7 @@ function closeDbModal() {
 function togglePlaytest() {
     if (editorMode === 'PLAYTEST') {
         editorMode = 'EDIT';
-        playtestState = null;
+        playtestPlayer = null;
         document.getElementById('btnTestYourself').textContent = '🎮 Hráč Test';
         document.getElementById('btnTestYourself').classList.remove('active');
         document.getElementById('playtestJumpOverlay').classList.add('hidden');
@@ -452,12 +442,10 @@ function togglePlaytest() {
 
     updateLevelFromUI();
     editorMode = 'PLAYTEST';
-    idleBotState = null; // Disable auto-bot when testing manually
     document.getElementById('btnTestYourself').textContent = '⏹️ Zastavit Test';
     document.getElementById('btnTestYourself').classList.add('active');
     document.getElementById('playtestJumpOverlay').classList.remove('hidden');
 
-    // Start background music
     if (currentLevel.music === 'custom' && customAudioUrl) {
         bgAudioPlayer.src = customAudioUrl;
         bgAudioPlayer.loop = true;
@@ -468,23 +456,9 @@ function togglePlaytest() {
         bgAudioPlayer.play().catch(() => {});
     }
 
-    playtestState = {
-        x: 150,
-        y: canvas.height - GROUND_HEIGHT - 40,
-        w: 40,
-        h: 40,
-        vy: 0,
-        mode: currentLevel.initialMode || 'cube',
-        isGrounded: true,
-        coyoteCounter: 5,
-        jumpBufferCounter: 0,
-        gravityDir: 1,
-        rotation: 0,
-        distance: currentLevel.startPos || 0,
-        jumpPressed: false,
-        jumpProcessed: false,
-        dead: false
-    };
+    playtestPlayer = new SimPlayer();
+    playtestPlayer.reset(currentLevel.startPos || 0, currentLevel.initialMode || 'cube');
+    playtestPlayer._manualJump = false;
 }
 
 // 20-Bot Suite Simulation Setup
@@ -495,26 +469,12 @@ function startBotTest() {
 
     const bots = [];
     for (let i = 0; i < 20; i++) {
-        bots.push({
-            id: i,
-            x: 150,
-            y: canvas.height - GROUND_HEIGHT - 40,
-            w: 40,
-            h: 40,
-            vy: 0,
-            mode: currentLevel.initialMode || 'cube',
-            isGrounded: true,
-            coyoteCounter: 5,
-            jumpBufferCounter: 0,
-            gravityDir: 1,
-            rotation: 0,
-            distance: currentLevel.startPos || 0,
-            jumpPressed: false,
-            jumpProcessed: false,
-            dead: false,
-            color: `hsla(${(i * 18) % 360}, 100%, 60%, 0.6)`,
-            lookAhead: 90 + (i * 5) // Slightly varied lookahead policy
-        });
+        const bot = new SimPlayer();
+        bot.reset(currentLevel.startPos || 0, currentLevel.initialMode || 'cube');
+        bot.id = i;
+        bot.color = `hsla(${(i * 18) % 360}, 100%, 60%, 0.6)`;
+        bot.lookAhead = 80 + (i * 6);
+        bots.push(bot);
     }
 
     botSuiteState = {
@@ -523,7 +483,6 @@ function startBotTest() {
         completedBot: null
     };
 
-    // Attach speed control listeners
     document.querySelectorAll('.btn-speed').forEach(btn => {
         btn.addEventListener('click', (e) => {
             document.querySelectorAll('.btn-speed').forEach(b => b.classList.remove('active'));
@@ -539,149 +498,45 @@ function stopBotTest() {
     document.getElementById('botStatusOverlay').classList.add('hidden');
 }
 
-// Idle Auto-Bot Simulation for Background Canvas
+// Idle Auto-Bot Engine using true SimEngine Physics
 function updateIdleBotPhysics() {
     if (editorMode !== 'EDIT') return;
 
-    if (!idleBotState || idleBotState.dead || idleBotState.distance >= (currentLevel.totalLength || 20000)) {
-        idleBotState = {
-            x: 150,
-            y: canvas.height - GROUND_HEIGHT - 40,
-            w: 40,
-            h: 40,
-            vy: 0,
-            mode: currentLevel.initialMode || 'cube',
-            isGrounded: true,
-            gravityDir: 1,
-            rotation: 0,
-            distance: currentLevel.startPos || 0,
-            jumpPressed: false,
-            jumpProcessed: false,
-            dead: false,
-            lookAhead: 100
-        };
+    if (!idleBotPlayer || idleBotPlayer.dead || idleBotPlayer.distance >= (currentLevel.totalLength || 20000)) {
+        idleBotPlayer = new SimPlayer();
+        idleBotPlayer.reset(currentLevel.startPos || 0, currentLevel.initialMode || 'cube');
+        idleBotPlayer.lookAhead = 100;
     }
 
-    const b = idleBotState;
-    b.distance += currentLevel.speed;
+    const b = idleBotPlayer;
 
-    // Mode Portals
+    // Solver lookahead policy
+    let jumpInput = false;
     currentLevel.obstacles.forEach(obs => {
-        if (obs.type === 'portal') {
-            if (Math.abs(b.distance - obs.x) < currentLevel.speed) {
-                b.mode = obs.mode;
-            }
-        }
-    });
-
-    // Auto-Bot Solver Logic
-    let shouldJump = false;
-    currentLevel.obstacles.forEach(obs => {
-        if (obs.x - b.distance > 0 && obs.x - b.distance < b.lookAhead) {
-            if (obs.type === 'spike' || obs.type === 'block' || obs.type === 'yellow_ring') {
-                shouldJump = true;
+        if (obs.x - b.distance > 0 && obs.x - b.distance < (b.lookAhead || 100)) {
+            if (obs.type === 'spike' || obs.type === 'block' || obs.type === 'yellow_ring' || obs.type === 'magenta_ring') {
+                jumpInput = true;
             }
         }
     });
 
     if (b.mode === 'ship' || b.mode === 'wave') {
-        if (b.y > canvas.height - GROUND_HEIGHT - 70) shouldJump = true;
-        if (b.y < CEILING_HEIGHT + 70) shouldJump = false;
+        const playerCanvasY = b.y;
+        if (playerCanvasY > canvas.height - GROUND_HEIGHT - 70) jumpInput = true;
+        if (playerCanvasY < CEILING_HEIGHT + 70) jumpInput = false;
     }
 
-    b.jumpPressed = shouldJump;
-
-    // Physics
-    const GRAVITY = 0.8;
-    const JUMP_FORCE = -12;
-
-    if (b.mode === 'cube') {
-        b.vy += GRAVITY;
-        if (b.jumpPressed && b.isGrounded) {
-            b.vy = JUMP_FORCE;
-            b.isGrounded = false;
-        }
-        b.rotation += 0.15;
-    } else if (b.mode === 'ship') {
-        if (b.jumpPressed) b.vy -= 0.6; else b.vy += 0.4;
-        b.vy = Math.max(-8, Math.min(8, b.vy));
-        b.rotation = b.vy * 0.05;
-    } else if (b.mode === 'ball') {
-        b.vy += GRAVITY * b.gravityDir;
-        if (b.jumpPressed && !b.jumpProcessed && b.isGrounded) {
-            b.gravityDir *= -1;
-            b.isGrounded = false;
-            b.jumpProcessed = true;
-        }
-        b.rotation += 0.15 * b.gravityDir;
-    } else if (b.mode === 'ufo') {
-        b.vy += GRAVITY * 0.8;
-        if (b.jumpPressed && !b.jumpProcessed) {
-            b.vy = JUMP_FORCE * 0.75;
-            b.jumpProcessed = true;
-        }
-        b.rotation = b.vy * 0.03;
-    } else if (b.mode === 'wave') {
-        if (b.jumpPressed) b.vy = -currentLevel.speed * 0.8; else b.vy = currentLevel.speed * 0.8;
-        b.rotation = b.jumpPressed ? -0.4 : 0.4;
-    }
-
-    b.y += b.vy;
-
-    const groundY = canvas.height - GROUND_HEIGHT - b.h;
-    if (b.y >= groundY) {
-        b.y = groundY;
-        b.vy = 0;
-        b.isGrounded = true;
-    } else if (b.y <= CEILING_HEIGHT) {
-        b.y = CEILING_HEIGHT;
-        b.vy = 0;
-    }
-
-    // Check Obstacle Collisions
-    currentLevel.obstacles.forEach(obs => {
-        const obsScreenX = obs.x - b.distance + b.x;
-        const obsY = canvas.height - GROUND_HEIGHT - obs.y - obs.h;
-
-        if (obsScreenX > b.x - 50 && obsScreenX < b.x + 50) {
-            if (obs.type === 'yellow_pad' || obs.type === 'magenta_pad') {
-                if (b.x + b.w > obsScreenX && b.x < obsScreenX + obs.w && b.y + b.h >= obsY) {
-                    b.vy = JUMP_FORCE * 1.2;
-                    b.isGrounded = false;
-                }
-            } else if (obs.type === 'spike') {
-                const margin = 8;
-                if (b.x + margin < obsScreenX + obs.w - margin && b.x + b.w - margin > obsScreenX + margin &&
-                    b.y + margin < obsY + obs.h - margin && b.y + b.h - margin > obsY + margin) {
-                    b.dead = true;
-                }
-            } else if (obs.type === 'block') {
-                if (b.x + b.w > obsScreenX && b.x < obsScreenX + obs.w) {
-                    if (b.y + b.h >= obsY && b.y + b.h <= obsY + 25 && b.vy >= 0) {
-                        b.y = obsY - b.h;
-                        b.vy = 0;
-                        b.isGrounded = true;
-                        return;
-                    }
-                }
-                const sideMargin = 6;
-                if (b.x + b.w - sideMargin > obsScreenX && b.x + sideMargin < obsScreenX + obs.w &&
-                    b.y + b.h - sideMargin > obsY && b.y + sideMargin < obsY + obs.h) {
-                    b.dead = true;
-                }
-            }
-        }
-    });
+    b.stepPhysics(currentLevel.obstacles, currentLevel.speed, jumpInput);
 }
 
 function renderIdleBot() {
-    if (!idleBotState || idleBotState.dead) return;
+    if (!idleBotPlayer || idleBotPlayer.dead) return;
 
-    const b = idleBotState;
-    const screenX = worldToScreen(b.distance, 0).x;
+    const b = idleBotPlayer;
+    const screenPos = worldToScreen(b.distance, 0);
 
     ctx.save();
-    ctx.translate(screenX + b.w / 2, b.y + b.h / 2);
+    ctx.translate(screenPos.x + b.w / 2, b.y + b.h / 2);
     ctx.rotate(b.rotation);
 
     ctx.fillStyle = 'rgba(0, 240, 255, 0.4)';
@@ -693,7 +548,7 @@ function renderIdleBot() {
     ctx.restore();
 }
 
-// Main Editor Render & Physics Loop
+// Main Loop
 function editorLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -714,18 +569,15 @@ function editorLoop() {
     requestAnimationFrame(editorLoop);
 }
 
-// RENDER GRID & LEVEL IN EDIT MODE
+// RENDER CANVAS GRID & LEVEL
 function renderGridAndLevel() {
     const groundY = canvas.height - GROUND_HEIGHT;
 
-    // Floor & Ceiling Background
+    // Dark canvas background
     ctx.fillStyle = '#0a0d14';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.fillStyle = '#121624';
-    ctx.fillRect(0, groundY, canvas.width, GROUND_HEIGHT);
-
-    // Draw Grid Lines if enabled
+    // Draw Grid Lines
     if (showGrid) {
         ctx.strokeStyle = '#1d2235';
         ctx.lineWidth = 1;
@@ -749,15 +601,7 @@ function renderGridAndLevel() {
         }
     }
 
-    // Floor Baseline
-    ctx.strokeStyle = '#00f0ff';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(0, groundY);
-    ctx.lineTo(canvas.width, groundY);
-    ctx.stroke();
-
-    // Render Obstacles & Portals
+    // Render Level Obstacles & Portals
     currentLevel.obstacles.forEach(obs => {
         const screen = worldToScreen(obs.x, groundY - obs.y - obs.h);
         const w = obs.w * zoom;
@@ -812,7 +656,6 @@ function renderGridAndLevel() {
             ctx.textBaseline = 'middle';
             ctx.fillText('$', screen.x + w / 2, screen.y + h / 2);
         } else if (obs.type === 'portal') {
-            // Colored Portal Door
             const portalColor = PORTAL_COLORS[obs.mode] || '#ffffff';
             ctx.fillStyle = portalColor;
             ctx.globalAlpha = 0.25;
@@ -830,20 +673,20 @@ function renderGridAndLevel() {
         }
     });
 
-    // Draw Start Line Marker
+    // Render Start Marker (Always rendered ON TOP of objects/grid)
     const startX = currentLevel.startPos || 0;
     const startScreenX = worldToScreen(startX, 0).x;
+    ctx.save();
     ctx.strokeStyle = '#00ff66';
     ctx.shadowColor = '#00ff66';
-    ctx.shadowBlur = 10;
+    ctx.shadowBlur = 12;
     ctx.lineWidth = 4;
     ctx.beginPath();
     ctx.moveTo(startScreenX, 0);
     ctx.lineTo(startScreenX, canvas.height);
     ctx.stroke();
 
-    // Start Banner / Flag
-    ctx.fillStyle = 'rgba(0, 255, 102, 0.2)';
+    ctx.fillStyle = 'rgba(0, 255, 102, 0.35)';
     ctx.fillRect(startScreenX, 20, 110, 36);
     ctx.strokeStyle = '#00ff66';
     ctx.lineWidth = 2;
@@ -854,21 +697,22 @@ function renderGridAndLevel() {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('🚩 START', startScreenX + 55, 38);
+    ctx.restore();
 
-    // Draw End / Finish Line Marker
+    // Render End / Finish Line Marker
     const endX = currentLevel.totalLength || 20000;
     const endScreenX = worldToScreen(endX, 0).x;
+    ctx.save();
     ctx.strokeStyle = '#ffd700';
     ctx.shadowColor = '#ffd700';
-    ctx.shadowBlur = 10;
+    ctx.shadowBlur = 12;
     ctx.lineWidth = 4;
     ctx.beginPath();
     ctx.moveTo(endScreenX, 0);
     ctx.lineTo(endScreenX, canvas.height);
     ctx.stroke();
 
-    // Finish Banner / Flag
-    ctx.fillStyle = 'rgba(255, 215, 0, 0.2)';
+    ctx.fillStyle = 'rgba(255, 215, 0, 0.35)';
     ctx.fillRect(endScreenX - 110, 20, 110, 36);
     ctx.strokeStyle = '#ffd700';
     ctx.lineWidth = 2;
@@ -879,145 +723,15 @@ function renderGridAndLevel() {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('🏁 FINISH', endScreenX - 55, 38);
-
-    ctx.shadowBlur = 0;
+    ctx.restore();
 }
 
 // PLAYTEST PHYSICS & RENDER
 function updatePlaytestPhysics() {
-    if (!playtestState || playtestState.dead) return;
+    if (!playtestPlayer || playtestPlayer.dead) return;
 
-    const p = playtestState;
-    p.distance += currentLevel.speed;
-
-    // Portals collision & Mode transitions
-    currentLevel.obstacles.forEach(obs => {
-        if (obs.type === 'portal') {
-            if (Math.abs(p.distance - obs.x) < currentLevel.speed) {
-                p.mode = obs.mode;
-            }
-        }
-    });
-
-    // Input coyote & buffer counters
-    if (p.isGrounded) {
-        p.coyoteCounter = 5;
-    } else {
-        p.coyoteCounter--;
-    }
-
-    if (p.jumpPressed) {
-        p.jumpBufferCounter = 5;
-    } else {
-        p.jumpBufferCounter--;
-    }
-
-    // Physics per mode
-    const GRAVITY = 0.8;
-    const JUMP_FORCE = -12;
-
-    if (p.mode === 'cube') {
-        p.vy += GRAVITY;
-        if (p.jumpBufferCounter > 0 && p.coyoteCounter > 0) {
-            p.vy = JUMP_FORCE;
-            p.isGrounded = false;
-            p.coyoteCounter = 0;
-            p.jumpBufferCounter = 0;
-        }
-        p.rotation += 0.15;
-    } else if (p.mode === 'ship') {
-        if (p.jumpPressed) p.vy -= 0.6; else p.vy += 0.4;
-        p.vy = Math.max(-8, Math.min(8, p.vy));
-        p.rotation = p.vy * 0.05;
-    } else if (p.mode === 'ball') {
-        p.vy += GRAVITY * p.gravityDir;
-        if (p.jumpPressed && !p.jumpProcessed && p.isGrounded) {
-            p.gravityDir *= -1;
-            p.isGrounded = false;
-            p.jumpProcessed = true;
-        }
-        p.rotation += 0.15 * p.gravityDir;
-    } else if (p.mode === 'ufo') {
-        p.vy += GRAVITY * 0.8;
-        if (p.jumpPressed && !p.jumpProcessed) {
-            p.vy = JUMP_FORCE * 0.75;
-            p.jumpProcessed = true;
-        }
-        p.rotation = p.vy * 0.03;
-    } else if (p.mode === 'wave') {
-        if (p.jumpPressed) p.vy = -currentLevel.speed * 0.8; else p.vy = currentLevel.speed * 0.8;
-        p.rotation = p.jumpPressed ? -0.4 : 0.4;
-    }
-
-    p.y += p.vy;
-
-    let groundedThisFrame = false;
-    const groundY = canvas.height - GROUND_HEIGHT - p.h;
-    if (p.y >= groundY) {
-        p.y = groundY;
-        p.vy = 0;
-        groundedThisFrame = true;
-        if (p.mode === 'cube') {
-            p.rotation = Math.round(p.rotation / (Math.PI / 2)) * (Math.PI / 2);
-        }
-    } else if (p.y <= CEILING_HEIGHT) {
-        p.y = CEILING_HEIGHT;
-        p.vy = 0;
-        if (p.mode === 'ball' && p.gravityDir === -1) {
-            groundedThisFrame = true;
-        }
-    }
-
-    // Check Obstacle Collisions
-    currentLevel.obstacles.forEach(obs => {
-        const obsScreenX = obs.x - p.distance + p.x;
-        const obsY = canvas.height - GROUND_HEIGHT - obs.y - obs.h;
-
-        if (obsScreenX > p.x - 50 && obsScreenX < p.x + 50) {
-            if (obs.type === 'yellow_pad') {
-                if (p.x + p.w > obsScreenX && p.x < obsScreenX + obs.w && p.y + p.h >= obsY) {
-                    p.vy = JUMP_FORCE * 1.3;
-                    p.isGrounded = false;
-                }
-            } else if (obs.type === 'magenta_pad') {
-                if (p.x + p.w > obsScreenX && p.x < obsScreenX + obs.w && p.y + p.h >= obsY) {
-                    p.vy = JUMP_FORCE * 0.8;
-                    p.isGrounded = false;
-                }
-            } else if (obs.type === 'yellow_ring') {
-                if (p.x + p.w > obsScreenX && p.x < obsScreenX + obs.w && p.y + p.h >= obsY && p.jumpPressed) {
-                    p.vy = JUMP_FORCE;
-                }
-            } else if (obs.type === 'magenta_ring') {
-                if (p.x + p.w > obsScreenX && p.x < obsScreenX + obs.w && p.y + p.h >= obsY && p.jumpPressed) {
-                    p.vy = JUMP_FORCE * 0.7;
-                }
-            } else if (obs.type === 'spike') {
-                const margin = 8;
-                if (p.x + margin < obsScreenX + obs.w - margin && p.x + p.w - margin > obsScreenX + margin &&
-                    p.y + margin < obsY + obs.h - margin && p.y + p.h - margin > obsY + margin) {
-                    p.dead = true;
-                }
-            } else if (obs.type === 'block') {
-                if (p.x + p.w > obsScreenX && p.x < obsScreenX + obs.w) {
-                    if (p.y + p.h >= obsY && p.y + p.h <= obsY + 25 && p.vy >= 0) {
-                        p.y = obsY - p.h;
-                        p.vy = 0;
-                        groundedThisFrame = true;
-                        p.coyoteCounter = 5;
-                        return;
-                    }
-                }
-                const sideMargin = 6;
-                if (p.x + p.w - sideMargin > obsScreenX && p.x + sideMargin < obsScreenX + obs.w &&
-                    p.y + p.h - sideMargin > obsY && p.y + sideMargin < obsY + obs.h) {
-                    p.dead = true;
-                }
-            }
-        }
-    });
-
-    p.isGrounded = groundedThisFrame;
+    const p = playtestPlayer;
+    p.stepPhysics(currentLevel.obstacles, currentLevel.speed, p._manualJump);
 
     if (p.distance >= currentLevel.totalLength) {
         alert('🎉 Level Dokončen! Test proběhl úspěšně.');
@@ -1026,9 +740,8 @@ function updatePlaytestPhysics() {
 }
 
 function renderPlaytest() {
-    const p = playtestState;
+    const p = playtestPlayer;
 
-    // Set camera to follow player distance
     cameraX = 150 - p.distance;
     cameraY = 0;
     zoom = 1.0;
@@ -1051,25 +764,11 @@ function renderPlaytest() {
         ctx.fillStyle = '#ff0055';
         ctx.font = 'bold 24px Outfit';
         ctx.textAlign = 'center';
-        ctx.fillText('CRASHED! stiskněte Space / Click pro nový pokus', canvas.width / 2, canvas.height / 2);
-        if (p.jumpPressed) {
-            playtestState = {
-                x: 150,
-                y: canvas.height - GROUND_HEIGHT - 40,
-                w: 40,
-                h: 40,
-                vy: 0,
-                mode: currentLevel.initialMode || 'cube',
-                isGrounded: true,
-                coyoteCounter: 5,
-                jumpBufferCounter: 0,
-                gravityDir: 1,
-                rotation: 0,
-                distance: 0,
-                jumpPressed: false,
-                jumpProcessed: false,
-                dead: false
-            };
+        ctx.fillText('CRASHED! Stiskněte Mezerník pro opakování', canvas.width / 2, canvas.height / 2);
+        if (p._manualJump) {
+            playtestPlayer = new SimPlayer();
+            playtestPlayer.reset(currentLevel.startPos || 0, currentLevel.initialMode || 'cube');
+            playtestPlayer._manualJump = false;
         }
     }
 }
@@ -1084,129 +783,23 @@ function updateBotSuitePhysics() {
     botSuiteState.bots.forEach(b => {
         if (b.dead) return;
 
-        b.distance += currentLevel.speed;
         if (b.distance > maxDistance) maxDistance = b.distance;
 
-        // Mode Portals
+        let jumpInput = false;
         currentLevel.obstacles.forEach(obs => {
-            if (obs.type === 'portal') {
-                if (Math.abs(b.distance - obs.x) < currentLevel.speed) {
-                    b.mode = obs.mode;
-                }
-            }
-        });
-
-        // Bot Policy / Solver Lookahead
-        let shouldJump = false;
-        currentLevel.obstacles.forEach(obs => {
-            if (obs.x - b.distance > 0 && obs.x - b.distance < b.lookAhead) {
-                if (obs.type === 'spike' || obs.type === 'block' || obs.type === 'yellow_ring') {
-                    shouldJump = true;
+            if (obs.x - b.distance > 0 && obs.x - b.distance < (b.lookAhead || 100)) {
+                if (obs.type === 'spike' || obs.type === 'block' || obs.type === 'yellow_ring' || obs.type === 'magenta_ring') {
+                    jumpInput = true;
                 }
             }
         });
 
         if (b.mode === 'ship' || b.mode === 'wave') {
-            if (b.y > canvas.height - GROUND_HEIGHT - 70) shouldJump = true;
-            if (b.y < CEILING_HEIGHT + 70) shouldJump = false;
+            if (b.y > canvas.height - GROUND_HEIGHT - 70) jumpInput = true;
+            if (b.y < CEILING_HEIGHT + 70) jumpInput = false;
         }
 
-        b.jumpPressed = shouldJump;
-
-        // Physics
-        const GRAVITY = 0.8;
-        const JUMP_FORCE = -12;
-
-        if (b.mode === 'cube') {
-            b.vy += GRAVITY;
-            if (b.jumpPressed && b.isGrounded) {
-                b.vy = JUMP_FORCE;
-                b.isGrounded = false;
-            }
-            b.rotation += 0.15;
-        } else if (b.mode === 'ship') {
-            if (b.jumpPressed) b.vy -= 0.6; else b.vy += 0.4;
-            b.vy = Math.max(-8, Math.min(8, b.vy));
-            b.rotation = b.vy * 0.05;
-        } else if (b.mode === 'ball') {
-            b.vy += GRAVITY * b.gravityDir;
-            if (b.jumpPressed && !b.jumpProcessed && b.isGrounded) {
-                b.gravityDir *= -1;
-                b.isGrounded = false;
-                b.jumpProcessed = true;
-            }
-            b.rotation += 0.15 * b.gravityDir;
-        } else if (b.mode === 'ufo') {
-            b.vy += GRAVITY * 0.8;
-            if (b.jumpPressed && !b.jumpProcessed) {
-                b.vy = JUMP_FORCE * 0.75;
-                b.jumpProcessed = true;
-            }
-            b.rotation = b.vy * 0.03;
-        } else if (b.mode === 'wave') {
-            if (b.jumpPressed) b.vy = -currentLevel.speed * 0.8; else b.vy = currentLevel.speed * 0.8;
-            b.rotation = b.jumpPressed ? -0.4 : 0.4;
-        }
-
-        b.y += b.vy;
-
-        const groundY = canvas.height - GROUND_HEIGHT - b.h;
-        if (b.y >= groundY) {
-            b.y = groundY;
-            b.vy = 0;
-            b.isGrounded = true;
-        } else if (b.y <= CEILING_HEIGHT) {
-            b.y = CEILING_HEIGHT;
-            b.vy = 0;
-        }
-
-        // Check Obstacle Collisions
-        currentLevel.obstacles.forEach(obs => {
-            const obsScreenX = obs.x - b.distance + b.x;
-            const obsY = canvas.height - GROUND_HEIGHT - obs.y - obs.h;
-
-            if (obsScreenX > b.x - 50 && obsScreenX < b.x + 50) {
-                if (obs.type === 'yellow_pad') {
-                    if (b.x + b.w > obsScreenX && b.x < obsScreenX + obs.w && b.y + b.h >= obsY) {
-                        b.vy = JUMP_FORCE * 1.3;
-                        b.isGrounded = false;
-                    }
-                } else if (obs.type === 'magenta_pad') {
-                    if (b.x + b.w > obsScreenX && b.x < obsScreenX + obs.w && b.y + b.h >= obsY) {
-                        b.vy = JUMP_FORCE * 0.8;
-                        b.isGrounded = false;
-                    }
-                } else if (obs.type === 'yellow_ring') {
-                    if (b.x + b.w > obsScreenX && b.x < obsScreenX + obs.w && b.y + b.h >= obsY && b.jumpPressed) {
-                        b.vy = JUMP_FORCE;
-                    }
-                } else if (obs.type === 'magenta_ring') {
-                    if (b.x + b.w > obsScreenX && b.x < obsScreenX + obs.w && b.y + b.h >= obsY && b.jumpPressed) {
-                        b.vy = JUMP_FORCE * 0.7;
-                    }
-                } else if (obs.type === 'spike') {
-                    const margin = 8;
-                    if (b.x + margin < obsScreenX + obs.w - margin && b.x + b.w - margin > obsScreenX + margin &&
-                        b.y + margin < obsY + obs.h - margin && b.y + b.h - margin > obsY + margin) {
-                        b.dead = true;
-                    }
-                } else if (obs.type === 'block') {
-                    if (b.x + b.w > obsScreenX && b.x < obsScreenX + obs.w) {
-                        if (b.y + b.h >= obsY && b.y + b.h <= obsY + 25 && b.vy >= 0) {
-                            b.y = obsY - b.h;
-                            b.vy = 0;
-                            b.isGrounded = true;
-                            return;
-                        }
-                    }
-                    const sideMargin = 6;
-                    if (b.x + b.w - sideMargin > obsScreenX && b.x + sideMargin < obsScreenX + obs.w &&
-                        b.y + b.h - sideMargin > obsY && b.y + sideMargin < obsY + obs.h) {
-                        b.dead = true;
-                    }
-                }
-            }
-        });
+        b.stepPhysics(currentLevel.obstacles, currentLevel.speed, jumpInput);
 
         if (!b.dead) {
             alive++;
@@ -1232,7 +825,7 @@ function updateBotSuitePhysics() {
         alert('✅ 20-Bot Suite POTVRDILA: Level je 100% BEATABLE!');
         stopBotTest();
     } else if (alive === 0) {
-        alert('❌ Všech 20 botů zemřelo! Level pravděpodobně obsahuje neprůchozí sekci.');
+        alert('❌ Všech 20 botů zemřelo! Level pravděpodobně obsahuje neprůchozí sekci nebo pád do propasti.');
         stopBotTest();
     }
 }
@@ -1240,7 +833,6 @@ function updateBotSuitePhysics() {
 function renderBotSuite() {
     if (!botSuiteState) return;
 
-    // Follow lead bot
     const leadBot = botSuiteState.bots.find(b => !b.dead) || botSuiteState.bots[0];
     cameraX = 150 - leadBot.distance;
     cameraY = 0;
