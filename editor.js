@@ -36,6 +36,7 @@ let currentLevel = {
     author: 'Player',
     speed: 10.5,
     music: 'techno_level2.wav',
+    startPos: 0,
     totalLength: 20000,
     initialMode: 'cube',
     obstacles: []
@@ -45,6 +46,7 @@ let currentLevel = {
 let editorMode = 'EDIT'; // 'EDIT', 'PLAYTEST', 'BOT_TEST'
 let playtestState = null;
 let botSuiteState = null;
+let botSimulationSpeed = 1;
 let animFrameId = null;
 
 // UI Elements
@@ -91,6 +93,7 @@ function updateUIFromLevel() {
     levelTitleInput.value = currentLevel.title;
     speedSelect.value = currentLevel.speed.toString();
     musicSelect.value = currentLevel.music;
+    if (currentLevel.startPos === undefined) currentLevel.startPos = 0;
     levelLengthInput.value = currentLevel.totalLength;
     objectCountEl.textContent = currentLevel.obstacles.length;
 }
@@ -99,6 +102,7 @@ function updateLevelFromUI() {
     currentLevel.title = levelTitleInput.value || 'Custom Level';
     currentLevel.speed = parseFloat(speedSelect.value);
     currentLevel.music = musicSelect.value;
+    if (currentLevel.startPos === undefined) currentLevel.startPos = 0;
     currentLevel.totalLength = parseInt(levelLengthInput.value, 10) || 20000;
 }
 
@@ -302,6 +306,17 @@ function handleCanvasClick(e) {
     }
 
     if (currentTool === 'draw') {
+        if (selectedObjectType === 'start_marker') {
+            currentLevel.startPos = Math.max(0, gridX);
+            return;
+        }
+
+        if (selectedObjectType === 'finish_marker') {
+            currentLevel.totalLength = Math.max((currentLevel.startPos || 0) + 1000, gridX);
+            levelLengthInput.value = currentLevel.totalLength;
+            return;
+        }
+
         // Check if object already exists at location
         const exists = currentLevel.obstacles.some(obs => Math.abs(obs.x - gridX) < 10 && Math.abs(obs.y - gridY) < 10);
         if (exists) return;
@@ -409,7 +424,7 @@ function togglePlaytest() {
         jumpBufferCounter: 0,
         gravityDir: 1,
         rotation: 0,
-        distance: 0,
+        distance: currentLevel.startPos || 0,
         jumpPressed: false,
         jumpProcessed: false,
         dead: false
@@ -437,7 +452,7 @@ function startBotTest() {
             jumpBufferCounter: 0,
             gravityDir: 1,
             rotation: 0,
-            distance: 0,
+            distance: currentLevel.startPos || 0,
             jumpPressed: false,
             jumpProcessed: false,
             dead: false,
@@ -451,6 +466,15 @@ function startBotTest() {
         aliveCount: 20,
         completedBot: null
     };
+
+    // Attach speed control listeners
+    document.querySelectorAll('.btn-speed').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.btn-speed').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            botSimulationSpeed = parseInt(btn.dataset.speed, 10) || 1;
+        });
+    });
 }
 
 function stopBotTest() {
@@ -469,7 +493,9 @@ function editorLoop() {
         updatePlaytestPhysics();
         renderPlaytest();
     } else if (editorMode === 'BOT_TEST') {
-        updateBotSuitePhysics();
+        for (let s = 0; s < botSimulationSpeed; s++) {
+            updateBotSuitePhysics();
+        }
         renderBotSuite();
     }
 
@@ -592,18 +618,57 @@ function renderGridAndLevel() {
         }
     });
 
-    // Draw End Line
-    const endScreenX = worldToScreen(currentLevel.totalLength, 0).x;
-    ctx.strokeStyle = '#10b981';
+    // Draw Start Line Marker
+    const startX = currentLevel.startPos || 0;
+    const startScreenX = worldToScreen(startX, 0).x;
+    ctx.strokeStyle = '#00ff66';
+    ctx.shadowColor = '#00ff66';
+    ctx.shadowBlur = 10;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(startScreenX, 0);
+    ctx.lineTo(startScreenX, canvas.height);
+    ctx.stroke();
+
+    // Start Banner / Flag
+    ctx.fillStyle = 'rgba(0, 255, 102, 0.2)';
+    ctx.fillRect(startScreenX, 20, 110, 36);
+    ctx.strokeStyle = '#00ff66';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(startScreenX, 20, 110, 36);
+
+    ctx.fillStyle = '#00ff66';
+    ctx.font = 'bold 14px Outfit';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🚩 START', startScreenX + 55, 38);
+
+    // Draw End / Finish Line Marker
+    const endX = currentLevel.totalLength || 20000;
+    const endScreenX = worldToScreen(endX, 0).x;
+    ctx.strokeStyle = '#ffd700';
+    ctx.shadowColor = '#ffd700';
+    ctx.shadowBlur = 10;
     ctx.lineWidth = 4;
     ctx.beginPath();
     ctx.moveTo(endScreenX, 0);
     ctx.lineTo(endScreenX, canvas.height);
     ctx.stroke();
 
-    ctx.fillStyle = '#10b981';
-    ctx.font = 'bold 16px Outfit';
-    ctx.fillText('FINISH', endScreenX + 10, 30);
+    // Finish Banner / Flag
+    ctx.fillStyle = 'rgba(255, 215, 0, 0.2)';
+    ctx.fillRect(endScreenX - 110, 20, 110, 36);
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(endScreenX - 110, 20, 110, 36);
+
+    ctx.fillStyle = '#ffd700';
+    ctx.font = 'bold 14px Outfit';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🏁 FINISH', endScreenX - 55, 38);
+
+    ctx.shadowBlur = 0;
 }
 
 // PLAYTEST PHYSICS & RENDER
@@ -941,6 +1006,12 @@ function updateBotSuitePhysics() {
 
     botSuiteState.aliveCount = alive;
     const progressPercent = Math.min(100, Math.floor((maxDistance / currentLevel.totalLength) * 100));
+
+    const leadBot = botSuiteState.bots.find(b => !b.dead) || botSuiteState.bots[0];
+    const leadingModeEl = document.getElementById('botLeadingMode');
+    if (leadingModeEl && leadBot) {
+        leadingModeEl.textContent = leadBot.mode.toUpperCase();
+    }
 
     document.getElementById('aliveBotsCount').textContent = alive;
     document.getElementById('botProgressPercent').textContent = progressPercent + '%';

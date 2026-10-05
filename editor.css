@@ -24,14 +24,15 @@ body, html {
 
 /* Top Header Bar */
 .editor-header {
-    height: 56px;
-    background: #181b28;
-    border-bottom: 2px solid #282c3f;
+    height: 60px;
+    background: #121522;
+    border-bottom: 2px solid #21263a;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 16px;
+    padding: 0 20px;
     z-index: 10;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
 .header-left, .header-center, .header-right {
@@ -40,23 +41,57 @@ body, html {
     gap: 12px;
 }
 
+.logo-group {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
 .editor-title {
-    font-size: 1.2rem;
-    font-weight: 800;
+    font-size: 1.25rem;
+    font-weight: 900;
     color: #00f0ff;
     letter-spacing: 1px;
     white-space: nowrap;
+    text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+}
+
+.editor-subtitle {
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: #a0aec0;
+    letter-spacing: 2px;
+    background: #1f2538;
+    padding: 2px 6px;
+    border-radius: 4px;
 }
 
 .level-name-input {
-    background: #0f111a;
-    border: 1px solid #333952;
+    background: #0b0d16;
+    border: 1px solid #2b324a;
     color: #fff;
     padding: 6px 12px;
     border-radius: 6px;
-    font-size: 0.95rem;
-    font-weight: 600;
-    width: 180px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    width: 170px;
+    transition: all 0.2s ease;
+}
+
+.level-name-input:focus {
+    outline: none;
+    border-color: #00f0ff;
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+}
+
+.tool-group, .action-group, .test-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #0b0d16;
+    padding: 4px 6px;
+    border-radius: 8px;
+    border: 1px solid #1f2438;
 }
 
 .level-name-input:focus {
@@ -87,6 +122,29 @@ body, html {
     color: #00f0ff;
 }
 
+.btn-ghost {
+    background: transparent;
+    border-color: #2b324a;
+    color: #a0aec0;
+}
+
+.btn-ghost:hover {
+    background: #1f2538;
+    color: #fff;
+}
+
+.btn-danger {
+    background: #381a24;
+    color: #ff4d79;
+    border-color: #5c2032;
+}
+
+.btn-danger:hover {
+    background: #e11d48;
+    color: #fff;
+    border-color: #e11d48;
+}
+
 .btn-primary {
     background: #00f0ff;
     color: #0f111a;
@@ -94,10 +152,22 @@ body, html {
     font-weight: 800;
 }
 
-.btn-primary:hover {
+.btn-primary:hover, .btn-primary.active {
     background: #33f3ff;
     color: #0f111a;
     box-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
+}
+
+.btn-accent {
+    background: #8b5cf6;
+    color: #fff;
+    border-color: #8b5cf6;
+    font-weight: 800;
+}
+
+.btn-accent:hover, .btn-accent.active {
+    background: #a78bfa;
+    box-shadow: 0 0 12px rgba(139, 92, 246, 0.5);
 }
 
 .btn-success {
@@ -115,10 +185,10 @@ body, html {
     background: #f59e0b;
     color: #0f111a;
     border-color: #f59e0b;
-    font-weight: 700;
+    font-weight: 800;
 }
 
-.btn-warning:hover {
+.btn-warning:hover, .btn-warning.active {
     background: #d97706;
     color: #fff;
 }
@@ -169,29 +239,60 @@ body, html {
 
 /* Right Tool Palette */
 .tool-palette {
-    width: 280px;
-    background: #141722;
-    border-left: 2px solid #282c3f;
+    width: 300px;
+    background: #0d0f18;
+    border-left: 2px solid #1f2438;
     display: flex;
     flex-direction: column;
     gap: 12px;
-    padding: 16px;
+    padding: 14px;
     overflow-y: auto;
 }
 
+.palette-card {
+    background: #141826;
+    border: 1px solid #22293e;
+    border-radius: 10px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
 .palette-section-title {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 1.2px;
-    color: #64748b;
-    margin-bottom: 6px;
+    letter-spacing: 1px;
+    color: #00f0ff;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .palette-grid {
     display: grid;
+    gap: 6px;
+}
+
+.palette-grid.grid-1 {
+    grid-template-columns: 1fr;
+}
+
+.palette-grid.grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.palette-grid.grid-3 {
     grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
+}
+
+.item-btn.horizontal-btn {
+    flex-direction: row;
+    gap: 10px;
+    justify-content: flex-start;
+    padding: 8px 12px;
+    aspect-ratio: auto;
 }
 
 .item-btn {

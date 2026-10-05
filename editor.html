@@ -12,25 +12,34 @@
         <!-- Top Toolbar Header -->
         <header class="editor-header">
             <div class="header-left">
-                <span class="editor-title">GD EDITOR</span>
+                <div class="logo-group">
+                    <span class="editor-title">⚡ GD EDITOR</span>
+                    <span class="editor-subtitle">STUDIO</span>
+                </div>
                 <input type="text" id="levelTitleInput" class="level-name-input" value="Custom Level 1" placeholder="Název levelu">
-                <a href="index.html" class="btn">🏠 Zpět do Hry</a>
+                <a href="index.html" class="btn btn-ghost">🏠 Zpět do Hry</a>
             </div>
 
             <div class="header-center">
-                <button id="btnToolDraw" class="btn btn-primary active">✏️ Kreslit</button>
-                <button id="btnToolErase" class="btn">🧹 Mazat</button>
-                <button id="btnClearAll" class="btn">🗑️ Vymazat Vše</button>
-                <button id="btnGridToggle" class="btn">🌐 Mřížka [ZAP]</button>
+                <div class="tool-group">
+                    <button id="btnToolDraw" class="btn btn-primary active" title="Kreslení objektů do mřížky">✏️ Kreslit</button>
+                    <button id="btnToolErase" class="btn" title="Mazání objektů">🧹 Mazat</button>
+                    <button id="btnClearAll" class="btn btn-danger" title="Smazat všechny objekty">🗑️ Vymazat Vše</button>
+                    <button id="btnGridToggle" class="btn" title="Přepnout mřížku">🌐 Mřížka [ZAP]</button>
+                </div>
             </div>
 
             <div class="header-right">
-                <button id="btnSaveDb" class="btn btn-success">💾 Uložit do DB</button>
-                <button id="btnOpenDb" class="btn">📁 Moje Levely</button>
-                <button id="btnExportJson" class="btn">📤 Export JSON</button>
-                <button id="btnImportJson" class="btn">📥 Import</button>
-                <button id="btnTestYourself" class="btn btn-warning">🎮 Test Yourself</button>
-                <button id="btnBotTest" class="btn btn-primary">🤖 20-Bot Suite</button>
+                <div class="action-group">
+                    <button id="btnSaveDb" class="btn btn-success">💾 Uložit do DB</button>
+                    <button id="btnOpenDb" class="btn">📁 Moje Levely</button>
+                    <button id="btnExportJson" class="btn" title="Exportovat JSON">📤 Export</button>
+                    <button id="btnImportJson" class="btn" title="Importovat JSON">📥 Import</button>
+                </div>
+                <div class="test-group">
+                    <button id="btnTestYourself" class="btn btn-warning">🎮 Hráč Test</button>
+                    <button id="btnBotTest" class="btn btn-accent">🤖 Live Boti (20)</button>
+                </div>
             </div>
         </header>
 
@@ -50,101 +59,148 @@
 
                 <!-- Bot Suite Status Overlay -->
                 <div id="botStatusOverlay" class="bot-overlay-status hidden">
-                    <span class="bot-counter">🤖 Boti: <span id="aliveBotsCount">20</span>/20 živých</span>
-                    <span id="botProgressPercent">0%</span>
-                    <button id="btnStopBotTest" class="btn">Zastavit</button>
+                    <div class="bot-status-item">
+                        <span class="bot-counter">🤖 Boti: <span id="aliveBotsCount">20</span>/20</span>
+                    </div>
+                    <div class="bot-status-item">
+                        <span class="bot-progress">Progres: <strong id="botProgressPercent">0%</strong></span>
+                    </div>
+                    <div class="bot-status-item">
+                        <span class="bot-mode-badge">Mód: <strong id="botLeadingMode">CUBE</strong></span>
+                    </div>
+                    <div class="bot-speed-controls">
+                        <button class="btn btn-sm btn-speed active" data-speed="1">1x</button>
+                        <button class="btn btn-sm btn-speed" data-speed="2">2x</button>
+                        <button class="btn btn-sm btn-speed" data-speed="5">5x</button>
+                    </div>
+                    <button id="btnStopBotTest" class="btn btn-danger btn-sm">⏹ Zastavit</button>
                 </div>
             </div>
 
             <!-- Right Sidebar Tool Palette -->
             <aside class="tool-palette">
-                <!-- Objects Palette -->
-                <div class="palette-section-title">Překážky & Prvky</div>
-                <div class="palette-grid">
-                    <button class="item-btn active" data-type="block">
-                        <div class="item-icon" style="background:#111827; border:2px solid #00f0ff; width:24px; height:24px;"></div>
-                        <span class="item-label">Blok</span>
-                    </button>
-                    <button class="item-btn" data-type="spike">
-                        <div class="item-icon" style="color:#ff0055;">▲</div>
-                        <span class="item-label">Osten</span>
-                    </button>
-                    <button class="item-btn" data-type="spike_ceiling">
-                        <div class="item-icon" style="color:#ff0055;">▼</div>
-                        <span class="item-label">Strop Osten</span>
-                    </button>
-                    <button class="item-btn" data-type="yellow_pad">
-                        <div class="item-icon" style="background:#ffd700; width:24px; height:8px;"></div>
-                        <span class="item-label">Yellow Pad</span>
-                    </button>
-                    <button class="item-btn" data-type="yellow_ring">
-                        <div class="item-icon" style="border:2px solid #ffd700; border-radius:50%; width:20px; height:20px;"></div>
-                        <span class="item-label">Yellow Ring</span>
-                    </button>
-                    <button class="item-btn" data-type="magenta_pad">
-                        <div class="item-icon" style="background:#ff00ff; width:24px; height:8px;"></div>
-                        <span class="item-label">Magenta Pad</span>
-                    </button>
-                    <button class="item-btn" data-type="magenta_ring">
-                        <div class="item-icon" style="border:2px solid #ff00ff; border-radius:50%; width:20px; height:20px;"></div>
-                        <span class="item-label">Magenta Ring</span>
-                    </button>
-                    <button class="item-btn" data-type="coin">
-                        <div class="item-icon" style="background:#ffd700; border-radius:50%; width:20px; height:20px; color:#000; font-size:10px; font-weight:bold; display:flex; align-items:center; justify-content:center;">$</div>
-                        <span class="item-label">Mince</span>
-                    </button>
+                <!-- Start & Finish Markers Section -->
+                <div class="palette-card">
+                    <div class="palette-section-title">🚩 Start & Konec Levelu</div>
+                    <div class="palette-grid grid-2">
+                        <button class="item-btn" data-type="start_marker" title="Nastavit Startovací bod">
+                            <div class="item-icon" style="color:#00ff66; font-size:1.4rem;">🚩</div>
+                            <span class="item-label">Start Pozice</span>
+                        </button>
+                        <button class="item-btn" data-type="finish_marker" title="Nastavit Cílový bod">
+                            <div class="item-icon" style="color:#ffd700; font-size:1.4rem;">🏁</div>
+                            <span class="item-label">Cíl Pozice</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Basic Hazards & Blocks -->
+                <div class="palette-card">
+                    <div class="palette-section-title">🧱 Překážky & Bloky</div>
+                    <div class="palette-grid grid-3">
+                        <button class="item-btn active" data-type="block">
+                            <div class="item-icon" style="background:#111827; border:2px solid #00f0ff; width:22px; height:22px; border-radius:3px;"></div>
+                            <span class="item-label">Blok</span>
+                        </button>
+                        <button class="item-btn" data-type="spike">
+                            <div class="item-icon" style="color:#ff0055; font-weight:bold;">▲</div>
+                            <span class="item-label">Osten</span>
+                        </button>
+                        <button class="item-btn" data-type="spike_ceiling">
+                            <div class="item-icon" style="color:#ff0055; font-weight:bold;">▼</div>
+                            <span class="item-label">Strop Osten</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Interactive Pads & Orbs -->
+                <div class="palette-card">
+                    <div class="palette-section-title">⚡ Odrazky & Orby</div>
+                    <div class="palette-grid grid-2">
+                        <button class="item-btn" data-type="yellow_pad">
+                            <div class="item-icon" style="background:#ffd700; width:26px; height:8px; border-radius:2px; box-shadow:0 0 6px #ffd700;"></div>
+                            <span class="item-label">Yellow Pad</span>
+                        </button>
+                        <button class="item-btn" data-type="yellow_ring">
+                            <div class="item-icon" style="border:2px solid #ffd700; border-radius:50%; width:20px; height:20px; box-shadow:0 0 6px #ffd700;"></div>
+                            <span class="item-label">Yellow Orb</span>
+                        </button>
+                        <button class="item-btn" data-type="magenta_pad">
+                            <div class="item-icon" style="background:#ff00ff; width:26px; height:8px; border-radius:2px; box-shadow:0 0 6px #ff00ff;"></div>
+                            <span class="item-label">Magenta Pad</span>
+                        </button>
+                        <button class="item-btn" data-type="magenta_ring">
+                            <div class="item-icon" style="border:2px solid #ff00ff; border-radius:50%; width:20px; height:20px; box-shadow:0 0 6px #ff00ff;"></div>
+                            <span class="item-label">Magenta Orb</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Game Mode Portals Palette -->
-                <div class="palette-section-title" style="margin-top: 16px;">Portály Změny Módu</div>
-                <div class="portals-grid">
-                    <button class="portal-btn" data-type="portal" data-mode="cube">
-                        <div class="portal-color-indicator" style="background: #00ff66; box-shadow:0 0 8px #00ff66;"></div>
-                        <span class="portal-btn-label">Cube</span>
-                    </button>
-                    <button class="portal-btn" data-type="portal" data-mode="ship">
-                        <div class="portal-color-indicator" style="background: #ff00aa; box-shadow:0 0 8px #ff00aa;"></div>
-                        <span class="portal-btn-label">Ship</span>
-                    </button>
-                    <button class="portal-btn" data-type="portal" data-mode="ball">
-                        <div class="portal-color-indicator" style="background: #ff2200; box-shadow:0 0 8px #ff2200;"></div>
-                        <span class="portal-btn-label">Ball</span>
-                    </button>
-                    <button class="portal-btn" data-type="portal" data-mode="ufo">
-                        <div class="portal-color-indicator" style="background: #ff9900; box-shadow:0 0 8px #ff9900;"></div>
-                        <span class="portal-btn-label">UFO</span>
-                    </button>
-                    <button class="portal-btn" data-type="portal" data-mode="wave">
-                        <div class="portal-color-indicator" style="background: #0099ff; box-shadow:0 0 8px #0099ff;"></div>
-                        <span class="portal-btn-label">Wave</span>
-                    </button>
+                <div class="palette-card">
+                    <div class="palette-section-title">🌀 Portály Změny Módu</div>
+                    <div class="portals-grid">
+                        <button class="portal-btn" data-type="portal" data-mode="cube">
+                            <div class="portal-color-indicator" style="background: #00ff66; box-shadow:0 0 8px #00ff66;"></div>
+                            <span class="portal-btn-label">Cube</span>
+                        </button>
+                        <button class="portal-btn" data-type="portal" data-mode="ship">
+                            <div class="portal-color-indicator" style="background: #ff00aa; box-shadow:0 0 8px #ff00aa;"></div>
+                            <span class="portal-btn-label">Ship</span>
+                        </button>
+                        <button class="portal-btn" data-type="portal" data-mode="ball">
+                            <div class="portal-color-indicator" style="background: #ff2200; box-shadow:0 0 8px #ff2200;"></div>
+                            <span class="portal-btn-label">Ball</span>
+                        </button>
+                        <button class="portal-btn" data-type="portal" data-mode="ufo">
+                            <div class="portal-color-indicator" style="background: #ff9900; box-shadow:0 0 8px #ff9900;"></div>
+                            <span class="portal-btn-label">UFO</span>
+                        </button>
+                        <button class="portal-btn" data-type="portal" data-mode="wave">
+                            <div class="portal-color-indicator" style="background: #0099ff; box-shadow:0 0 8px #0099ff;"></div>
+                            <span class="portal-btn-label">Wave</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Collectibles -->
+                <div class="palette-card">
+                    <div class="palette-section-title">💰 Mince & Odměny</div>
+                    <div class="palette-grid grid-1">
+                        <button class="item-btn horizontal-btn" data-type="coin">
+                            <div class="item-icon" style="background:#ffd700; border-radius:50%; width:22px; height:22px; color:#000; font-size:11px; font-weight:bold; display:flex; align-items:center; justify-content:center; box-shadow:0 0 8px #ffd700;">$</div>
+                            <span class="item-label">Zlatá Mince (Skin Shop)</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Level Properties -->
-                <div class="palette-section-title" style="margin-top: 16px;">Nastavení Levelu</div>
-                <div class="settings-form">
-                    <div class="form-group">
-                        <label for="speedSelect">Rychlost Hry</label>
-                        <select id="speedSelect" class="form-control">
-                            <option value="9.0">1.0x (Cyber Rave)</option>
-                            <option value="10.5" selected>1.2x (Acid District)</option>
-                            <option value="12.0">1.4x (Industrial Hell)</option>
-                            <option value="14.0">1.6x (Extreme Demon)</option>
-                        </select>
-                    </div>
+                <div class="palette-card">
+                    <div class="palette-section-title">⚙️ Nastavení Levelu</div>
+                    <div class="settings-form">
+                        <div class="form-group">
+                            <label for="speedSelect">Rychlost Hry</label>
+                            <select id="speedSelect" class="form-control">
+                                <option value="9.0">1.0x (Cyber Rave)</option>
+                                <option value="10.5" selected>1.2x (Acid District)</option>
+                                <option value="12.0">1.4x (Industrial Hell)</option>
+                                <option value="14.0">1.6x (Extreme Demon)</option>
+                            </select>
+                        </div>
 
-                    <div class="form-group">
-                        <label for="musicSelect">Hudební Doprovod</label>
-                        <select id="musicSelect" class="form-control">
-                            <option value="techno_level1.wav">Cyber Techno Track 1</option>
-                            <option value="techno_level2.wav" selected>Acid Techno Track 2</option>
-                            <option value="techno_level3.wav">Industrial Hell Track 3</option>
-                        </select>
-                    </div>
+                        <div class="form-group">
+                            <label for="musicSelect">Hudební Doprovod</label>
+                            <select id="musicSelect" class="form-control">
+                                <option value="techno_level1.wav">Cyber Techno Track 1</option>
+                                <option value="techno_level2.wav" selected>Acid Techno Track 2</option>
+                                <option value="techno_level3.wav">Industrial Hell Track 3</option>
+                            </select>
+                        </div>
 
-                    <div class="form-group">
-                        <label for="levelLengthInput">Délka Levelu (px)</label>
-                        <input type="number" id="levelLengthInput" class="form-control" value="20000" step="1000" min="5000">
+                        <div class="form-group">
+                            <label for="levelLengthInput">Délka Levelu (px)</label>
+                            <input type="number" id="levelLengthInput" class="form-control" value="20000" step="1000" min="2000">
+                        </div>
                     </div>
                 </div>
             </aside>
