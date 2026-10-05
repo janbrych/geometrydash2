@@ -622,15 +622,30 @@ function updatePlaytestPhysics() {
         }
     });
 
+    // Input coyote & buffer counters
+    if (p.isGrounded) {
+        p.coyoteCounter = 5;
+    } else {
+        p.coyoteCounter--;
+    }
+
+    if (p.jumpPressed) {
+        p.jumpBufferCounter = 5;
+    } else {
+        p.jumpBufferCounter--;
+    }
+
     // Physics per mode
     const GRAVITY = 0.8;
     const JUMP_FORCE = -12;
 
     if (p.mode === 'cube') {
         p.vy += GRAVITY;
-        if (p.jumpPressed && p.isGrounded) {
+        if (p.jumpBufferCounter > 0 && p.coyoteCounter > 0) {
             p.vy = JUMP_FORCE;
             p.isGrounded = false;
+            p.coyoteCounter = 0;
+            p.jumpBufferCounter = 0;
         }
         p.rotation += 0.15;
     } else if (p.mode === 'ship') {
@@ -659,17 +674,21 @@ function updatePlaytestPhysics() {
 
     p.y += p.vy;
 
+    let groundedThisFrame = false;
     const groundY = canvas.height - GROUND_HEIGHT - p.h;
     if (p.y >= groundY) {
         p.y = groundY;
         p.vy = 0;
-        p.isGrounded = true;
+        groundedThisFrame = true;
         if (p.mode === 'cube') {
             p.rotation = Math.round(p.rotation / (Math.PI / 2)) * (Math.PI / 2);
         }
     } else if (p.y <= CEILING_HEIGHT) {
         p.y = CEILING_HEIGHT;
         p.vy = 0;
+        if (p.mode === 'ball' && p.gravityDir === -1) {
+            groundedThisFrame = true;
+        }
     }
 
     // Check Obstacle Collisions
@@ -707,7 +726,8 @@ function updatePlaytestPhysics() {
                     if (p.y + p.h >= obsY && p.y + p.h <= obsY + 25 && p.vy >= 0) {
                         p.y = obsY - p.h;
                         p.vy = 0;
-                        p.isGrounded = true;
+                        groundedThisFrame = true;
+                        p.coyoteCounter = 5;
                         return;
                     }
                 }
@@ -719,6 +739,8 @@ function updatePlaytestPhysics() {
             }
         }
     });
+
+    p.isGrounded = groundedThisFrame;
 
     if (p.distance >= currentLevel.totalLength) {
         alert('🎉 Level Dokončen! Test proběhl úspěšně.');
