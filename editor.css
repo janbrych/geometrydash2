@@ -30,21 +30,24 @@ body, html {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 16px;
+    padding: 0 10px;
     z-index: 10;
+    gap: 8px;
+    overflow-x: auto;
 }
 
 .header-left, .header-center, .header-right {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 6px;
+    flex-shrink: 0;
 }
 
 .editor-title {
-    font-size: 1.2rem;
+    font-size: 1.05rem;
     font-weight: 800;
     color: #00f0ff;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
     white-space: nowrap;
 }
 
@@ -52,11 +55,11 @@ body, html {
     background: #0f111a;
     border: 1px solid #333952;
     color: #fff;
-    padding: 6px 12px;
+    padding: 5px 8px;
     border-radius: 6px;
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     font-weight: 600;
-    width: 180px;
+    width: 130px;
 }
 
 .level-name-input:focus {
@@ -68,14 +71,14 @@ body, html {
     background: #232738;
     border: 1px solid #3a415a;
     color: #fff;
-    padding: 6px 14px;
+    padding: 5px 10px;
     border-radius: 6px;
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     transition: all 0.2s ease;
     white-space: nowrap;
     text-decoration: none;
