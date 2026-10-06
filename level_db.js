@@ -15,15 +15,16 @@ const LevelDB = {
     },
 
     getDefaultLevels() {
-        // Sample starter custom level if none exist
+        // Initial starter custom level marked as MAIN
         const defaultLevel = {
             id: 'custom_starter_1',
             title: 'Neon Cyber Genesis',
             author: 'Community',
+            isMain: true,
             createdAt: new Date().toISOString(),
             speed: 10.5,
             music: 'techno_level1.wav',
-            totalLength: 20000,
+            totalLength: 12000,
             initialMode: 'cube',
             obstacles: [
                 { type: 'spike', x: 800, y: 0, w: 40, h: 40 },
@@ -44,6 +45,16 @@ const LevelDB = {
         const list = [defaultLevel];
         localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
         return list;
+    },
+
+    toggleMainLevel(id) {
+        const levels = this.getAllLevels();
+        const lvl = levels.find(l => l.id === id);
+        if (lvl) {
+            lvl.isMain = !lvl.isMain;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(levels));
+        }
+        return lvl;
     },
 
     getLevelById(id) {

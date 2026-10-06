@@ -57,48 +57,14 @@
             <!-- Right Side: Level Selection Cards -->
             <section class="levels-section">
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                    <h2 class="section-title" style="margin-bottom:0;">SELECT TRACK</h2>
-                    <button id="openCommunityBtn" class="btn-secondary" style="font-size: 0.85rem; padding: 6px 14px;">
-                        🌐 COMMUNITY LEVELS
-                    </button>
+                    <h2 class="section-title" style="margin-bottom:0;">TRACK LIST</h2>
+                    <a href="editor.html" class="btn-secondary" style="font-size: 0.85rem; padding: 6px 14px; text-decoration: none;">
+                        ➕ CREATE NEW LEVEL
+                    </a>
                 </div>
 
-                <div class="level-cards">
-                    <div class="level-card" onclick="selectLevel(0)">
-                        <div class="level-badge badge-cyber">INSANE • 1.2x SPEED</div>
-                        <h3>CYBER RAVE</h3>
-                        <div class="level-info">145 BPM • NEON CYBER</div>
-                        <div class="mode-sequence">CUBE ➔ SHIP ➔ BALL ➔ UFO ➔ WAVE</div>
-                        <div class="level-progress-bg"><div id="progress-0" class="level-progress-fill" style="width: 0%;"></div></div>
-                        <div class="card-footer-row">
-                            <span id="best-0" class="level-best">Best: 0%</span>
-                            <button class="btn-card-play">PLAY</button>
-                        </div>
-                    </div>
-
-                    <div class="level-card" onclick="selectLevel(1)">
-                        <div class="level-badge badge-acid">DEMON • 1.4x SPEED</div>
-                        <h3>ACID DISTRICT</h3>
-                        <div class="level-info">150 BPM • ACID GREEN</div>
-                        <div class="mode-sequence">BALL ➔ CUBE ➔ WAVE ➔ SHIP ➔ UFO</div>
-                        <div class="level-progress-bg"><div id="progress-1" class="level-progress-fill" style="width: 0%;"></div></div>
-                        <div class="card-footer-row">
-                            <span id="best-1" class="level-best">Best: 0%</span>
-                            <button class="btn-card-play">PLAY</button>
-                        </div>
-                    </div>
-
-                    <div class="level-card" onclick="selectLevel(2)">
-                        <div class="level-badge badge-industrial">EXTREME DEMON • 1.6x SPEED</div>
-                        <h3>INDUSTRIAL HELL</h3>
-                        <div class="level-info">155 BPM • CRIMSON HELL</div>
-                        <div class="mode-sequence">WAVE ➔ UFO ➔ SHIP ➔ BALL ➔ CUBE</div>
-                        <div class="level-progress-bg"><div id="progress-2" class="level-progress-fill" style="width: 0%;"></div></div>
-                        <div class="card-footer-row">
-                            <span id="best-2" class="level-best">Best: 0%</span>
-                            <button class="btn-card-play">PLAY</button>
-                        </div>
-                    </div>
+                <div id="lobbyLevelCards" class="level-cards">
+                    <!-- Dynamic Level Cards populated from LevelDB -->
                 </div>
                 <div class="lobby-controls-hint">Press [SPACE] or Click to Jump • Press [B] for Auto-Bot Mode</div>
             </section>
