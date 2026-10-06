@@ -24,25 +24,26 @@ body, html {
 
 /* Top Header Bar */
 .editor-header {
-    height: 56px;
+    height: 52px;
     background: #181b28;
     border-bottom: 2px solid #282c3f;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 16px;
+    padding: 0 12px;
     z-index: 10;
+    overflow-x: auto;
 }
 
 .header-left, .header-center, .header-right {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
 }
 
 .editor-title {
-    font-size: 1.2rem;
-    font-weight: 800;
+    font-size: 1.1rem;
+    font-weight: 900;
     color: #00f0ff;
     letter-spacing: 1px;
     white-space: nowrap;
@@ -52,11 +53,11 @@ body, html {
     background: #0f111a;
     border: 1px solid #333952;
     color: #fff;
-    padding: 6px 12px;
+    padding: 5px 10px;
     border-radius: 6px;
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     font-weight: 600;
-    width: 180px;
+    width: 150px;
 }
 
 .level-name-input:focus {
@@ -68,14 +69,14 @@ body, html {
     background: #232738;
     border: 1px solid #3a415a;
     color: #fff;
-    padding: 6px 14px;
+    padding: 5px 10px;
     border-radius: 6px;
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     transition: all 0.2s ease;
     white-space: nowrap;
     text-decoration: none;
@@ -85,6 +86,12 @@ body, html {
     background: #31374e;
     border-color: #00f0ff;
     color: #00f0ff;
+}
+
+.btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    border-color: #282c3f;
 }
 
 .btn-primary {
@@ -131,6 +138,14 @@ body, html {
     overflow: hidden;
 }
 
+.center-workspace {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
 /* Canvas Viewport */
 .canvas-wrapper {
     flex: 1;
@@ -149,17 +164,17 @@ body, html {
 /* Overlay Stats / Instructions */
 .editor-info-overlay {
     position: absolute;
-    top: 12px;
-    left: 12px;
+    top: 10px;
+    left: 10px;
     background: rgba(15, 17, 26, 0.85);
     backdrop-filter: blur(8px);
     border: 1px solid #282c3f;
     border-radius: 8px;
-    padding: 8px 14px;
-    font-size: 0.8rem;
+    padding: 6px 12px;
+    font-size: 0.75rem;
     pointer-events: none;
     display: flex;
-    gap: 16px;
+    gap: 12px;
     color: #8b95a5;
 }
 
@@ -167,31 +182,62 @@ body, html {
     color: #00f0ff;
 }
 
+/* Timeline Panel */
+.editor-timeline-panel {
+    height: 44px;
+    background: #141722;
+    border-top: 2px solid #282c3f;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 12px;
+    z-index: 10;
+}
+
+.timeline-info {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #00f0ff;
+    white-space: nowrap;
+}
+
+.timeline-canvas-container {
+    flex: 1;
+    height: 100%;
+    position: relative;
+}
+
+#timelineCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
 /* Right Tool Palette */
 .tool-palette {
-    width: 280px;
+    width: 270px;
     background: #141722;
     border-left: 2px solid #282c3f;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    padding: 16px;
+    gap: 10px;
+    padding: 12px;
     overflow-y: auto;
 }
 
 .palette-section-title {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 1.2px;
     color: #64748b;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 .palette-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
+    gap: 6px;
 }
 
 .item-btn {
@@ -221,18 +267,18 @@ body, html {
 }
 
 .item-icon {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
 }
 
 .item-label {
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     font-weight: 600;
-    margin-top: 4px;
+    margin-top: 3px;
     color: #a0aec0;
     text-align: center;
     line-height: 1;
@@ -242,17 +288,17 @@ body, html {
 .portals-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
+    gap: 6px;
 }
 
 .portal-btn {
-    padding: 8px;
-    border-radius: 8px;
+    padding: 6px;
+    border-radius: 6px;
     background: #1c2030;
     border: 2px solid #2b3147;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     cursor: pointer;
     transition: all 0.15s ease;
 }
@@ -267,13 +313,13 @@ body, html {
 }
 
 .portal-color-indicator {
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
 }
 
 .portal-btn-label {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 700;
     color: #e2e8f0;
 }
@@ -282,17 +328,17 @@ body, html {
 .settings-form {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
 .form-group {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 3px;
 }
 
 .form-group label {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 600;
     color: #94a3b8;
 }
@@ -302,8 +348,8 @@ body, html {
     border: 1px solid #2b3147;
     border-radius: 6px;
     color: #fff;
-    padding: 6px 10px;
-    font-size: 0.85rem;
+    padding: 5px 8px;
+    font-size: 0.8rem;
 }
 
 .form-control:focus {
@@ -311,7 +357,24 @@ body, html {
     border-color: #00f0ff;
 }
 
-/* Bottom Bar / Level List Modal */
+.resolved-track-badge {
+    background: #182b3a;
+    border: 1px solid #00f0ff;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 0.75rem;
+    color: #00f0ff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 4px;
+}
+
+.resolved-track-badge.hidden {
+    display: none;
+}
+
+/* Modal Overlay */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -334,7 +397,7 @@ body, html {
     background: #141722;
     border: 2px solid #282c3f;
     border-radius: 12px;
-    width: 600px;
+    width: 580px;
     max-width: 90vw;
     max-height: 80vh;
     display: flex;
@@ -343,7 +406,7 @@ body, html {
 }
 
 .modal-header {
-    padding: 16px 20px;
+    padding: 14px 18px;
     border-bottom: 1px solid #282c3f;
     display: flex;
     align-items: center;
@@ -351,7 +414,7 @@ body, html {
 }
 
 .modal-title {
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 800;
     color: #00f0ff;
 }
@@ -360,7 +423,7 @@ body, html {
     background: none;
     border: none;
     color: #8b95a5;
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     cursor: pointer;
 }
 
@@ -369,54 +432,54 @@ body, html {
 }
 
 .modal-body {
-    padding: 20px;
+    padding: 16px;
     overflow-y: auto;
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
 }
 
 .db-level-item {
     background: #1c2030;
     border: 1px solid #2b3147;
     border-radius: 8px;
-    padding: 12px 16px;
+    padding: 10px 14px;
     display: flex;
     align-items: center;
     justify-content: space-between;
 }
 
 .db-level-info h4 {
-    font-size: 1rem;
+    font-size: 0.95rem;
     color: #fff;
     margin-bottom: 2px;
 }
 
 .db-level-info p {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: #64748b;
 }
 
 .db-level-actions {
     display: flex;
-    gap: 8px;
+    gap: 6px;
 }
 
-/* Bot verification overlay modal */
+/* Bot Overlay Status */
 .bot-overlay-status {
     position: absolute;
-    top: 60px;
+    top: 50px;
     left: 50%;
     transform: translateX(-50%);
     background: rgba(20, 23, 34, 0.95);
     border: 2px solid #00f0ff;
     box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
-    padding: 12px 24px;
-    border-radius: 30px;
+    padding: 10px 20px;
+    border-radius: 25px;
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 14px;
     z-index: 50;
 }
 
@@ -427,5 +490,5 @@ body, html {
 .bot-counter {
     font-weight: 800;
     color: #00f0ff;
-    font-size: 1.1rem;
+    font-size: 1rem;
 }

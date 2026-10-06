@@ -5,17 +5,21 @@ const STORAGE_KEY = 'gd_custom_levels';
 const LevelDB = {
     getAllLevels() {
         const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return this.getDefaultLevels();
-        try {
-            return JSON.parse(raw);
-        } catch (e) {
-            console.error('Failed to parse custom levels from storage', e);
-            return this.getDefaultLevels();
+        let levels = [];
+        if (!raw) {
+            levels = this.getDefaultLevels();
+        } else {
+            try {
+                levels = JSON.parse(raw);
+            } catch (e) {
+                console.error('Failed to parse custom levels from storage', e);
+                levels = this.getDefaultLevels();
+            }
         }
+        return levels.map(lvl => this.migrateLevel(lvl));
     },
 
     getDefaultLevels() {
-        // Initial starter custom level marked as MAIN
         const defaultLevel = {
             id: 'custom_starter_1',
             title: 'Neon Cyber Genesis',
@@ -23,9 +27,12 @@ const LevelDB = {
             isMain: true,
             createdAt: new Date().toISOString(),
             speed: 10.5,
+            bpm: 120,
             music: 'techno_level1.wav',
             totalLength: 12000,
             initialMode: 'cube',
+            startPosition: { x: 100, y: 0, mode: 'cube' },
+            floorLocked: true,
             obstacles: [
                 { type: 'spike', x: 800, y: 0, w: 40, h: 40 },
                 { type: 'spike', x: 1200, y: 0, w: 40, h: 40 },
@@ -42,9 +49,70 @@ const LevelDB = {
                 { type: 'coin', x: 4900, y: 120, w: 30, h: 30 }
             ]
         };
-        const list = [defaultLevel];
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-        return list;
+        const migrated = [this.migrateLevel(defaultLevel)];
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+        return migrated;
+    },
+
+    migrateLevel(level) {
+        if (!level) return null;
+        const totalLength = parseInt(level.totalLength, 10) || 20000;
+        level.totalLength = totalLength;
+        level.speed = parseFloat(level.speed) || 10.5;
+        level.bpm = parseInt(level.bpm, 10) || 120;
+        level.initialMode = level.initialMode || 'cube';
+        level.music = level.music || 'techno_level1.wav';
+        if (typeof level.floorLocked === 'undefined') {
+            level.floorLocked = true;
+        }
+
+        if (!Array.isArray(level.obstacles)) {
+            level.obstacles = [];
+        }
+
+        // Migrate Start Position & START Block
+        let existingStart = level.obstacles.find(o => o.type === 'start');
+        if (!level.startPosition) {
+            if (existingStart) {
+                level.startPosition = {
+                    x: existingStart.x,
+                    y: existingStart.y,
+                    mode: existingStart.mode || level.initialMode || 'cube'
+                };
+            } else {
+                level.startPosition = { x: 100, y: 0, mode: level.initialMode || 'cube' };
+            }
+        }
+
+        // Ensure single START object in obstacles matching startPosition
+        level.obstacles = level.obstacles.filter(o => o.type !== 'start');
+        level.obstacles.push({
+            type: 'start',
+            x: level.startPosition.x,
+            y: level.startPosition.y,
+            mode: level.startPosition.mode || level.initialMode || 'cube',
+            w: 40,
+            h: 40
+        });
+
+        // Migrate Floor Blocks
+        const hasFloor = level.obstacles.some(o => o.isFloor || o.type === 'floor');
+        if (!hasFloor) {
+            const floorBlocks = [];
+            for (let x = 0; x <= totalLength + 2000; x += 40) {
+                floorBlocks.push({
+                    type: 'block',
+                    x: x,
+                    y: -40,
+                    w: 40,
+                    h: 40,
+                    isFloor: true
+                });
+            }
+            level.obstacles = [...floorBlocks, ...level.obstacles];
+        }
+
+        return level;
     },
 
     toggleMainLevel(id) {
@@ -63,23 +131,25 @@ const LevelDB = {
     },
 
     saveLevel(levelData) {
+        const migrated = this.migrateLevel(levelData);
         const levels = this.getAllLevels();
-        if (!levelData.id) {
-            levelData.id = 'level_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
-            levelData.createdAt = new Date().toISOString();
+
+        if (!migrated.id) {
+            migrated.id = 'level_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+            migrated.createdAt = new Date().toISOString();
         } else {
-            levelData.updatedAt = new Date().toISOString();
+            migrated.updatedAt = new Date().toISOString();
         }
 
-        const existingIdx = levels.findIndex(lvl => lvl.id === levelData.id);
+        const existingIdx = levels.findIndex(lvl => lvl.id === migrated.id);
         if (existingIdx >= 0) {
-            levels[existingIdx] = levelData;
+            levels[existingIdx] = migrated;
         } else {
-            levels.push(levelData);
+            levels.push(migrated);
         }
 
         localStorage.setItem(STORAGE_KEY, JSON.stringify(levels));
-        return levelData;
+        return migrated;
     },
 
     deleteLevel(id) {
@@ -89,7 +159,8 @@ const LevelDB = {
     },
 
     exportToJson(levelData) {
-        return JSON.stringify(levelData, null, 2);
+        const migrated = this.migrateLevel(levelData);
+        return JSON.stringify(migrated, null, 2);
     },
 
     importFromJson(jsonStr) {
@@ -98,11 +169,10 @@ const LevelDB = {
             if (!data.title || !Array.isArray(data.obstacles)) {
                 throw new Error('Neplatný formát levelu.');
             }
-            // Generate new ID to avoid conflict
             data.id = 'level_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
             data.createdAt = new Date().toISOString();
-            this.saveLevel(data);
-            return data;
+            const saved = this.saveLevel(data);
+            return saved;
         } catch (e) {
             alert('Chyba při importu levelu: ' + e.message);
             return null;

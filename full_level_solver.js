@@ -7,7 +7,7 @@ function cloneSim(s) {
     copy.transitions = s.transitions;
     copy.gameDistance = s.gameDistance;
     copy.jumpPressed = s.jumpPressed;
-    copy.jumpProcessed = s.jumpProcessed;
+    copy.jumpProcessedState = { value: s.jumpProcessedState.value };
     copy.dead = s.dead;
     return copy;
 }
@@ -22,7 +22,7 @@ function buildCalculatedLevel(sim) {
         { x: 1300, y: 0, type: 'block', h: 30, w: 100 },
         { x: 1400, y: 0, type: 'block', h: 60, w: 100 },
         { x: 1800, y: 0, type: 'spike' },
-        { x: 2200, y: 0, type: 'ring', h: 100 },
+        { x: 2200, y: 0, type: 'yellow_ring', h: 100 },
         { x: 2400, y: 100, type: 'block', w: 120, h: 20 },
         { x: 2900, y: 0, type: 'spike' },
         { x: 3300, y: 0, type: 'spike' },
@@ -31,13 +31,13 @@ function buildCalculatedLevel(sim) {
 
     // Part 2: Cube - Pads & Orbs Verticality
     sim.addSection(curX, [
-        { x: 300, y: 0, type: 'pad' },
+        { x: 300, y: 0, type: 'yellow_pad' },
         { x: 700, y: 140, type: 'block', w: 120, h: 20 },
-        { x: 1000, y: 140, type: 'ring', h: 50 },
+        { x: 1000, y: 140, type: 'yellow_ring', h: 50 },
         { x: 1300, y: 220, type: 'block', w: 120, h: 20 },
-        { x: 1600, y: 220, type: 'ring', h: 50 },
+        { x: 1600, y: 220, type: 'yellow_ring', h: 50 },
         { x: 1900, y: 300, type: 'block', w: 120, h: 20 },
-        { x: 2300, y: 0, type: 'spike' },
+        { x: 2300, y: 0, type: 'yellow_pad' },
     ]);
     curX += 2900;
 
@@ -47,11 +47,10 @@ function buildCalculatedLevel(sim) {
 
     // Part 3: Ship - Smooth Cavern
     for (let i = 0; i < 10; i++) {
-        let yCenter = 300 + Math.sin(i * 0.6) * 100;
         sim.addSection(curX + i * 850, [
-            { x: 0, y: 0, type: 'block', w: 150, h: Math.max(0, yCenter - 140) },
-            { x: 0, y: yCenter + 140, type: 'block', w: 150, h: Math.max(0, 600 - (yCenter + 140)) },
-            { x: 450, y: yCenter - 140, type: 'spike' }
+            { x: 0, y: 0, type: 'block', w: 150, h: 40 },
+            { x: 0, y: 480, type: 'block', w: 150, h: 120 },
+            { x: 450, y: 40, type: 'spike' }
         ]);
     }
     curX += 8800;
@@ -81,7 +80,7 @@ function buildCalculatedLevel(sim) {
             { x: 300, y: 150, type: 'block', w: 120, h: 20 },
             { x: 600, y: 0, type: 'spike' },
             { x: 600, y: 550, type: 'spike' },
-            { x: 750, y: 250, type: 'ring', h: 40 }
+            { x: 750, y: 250, type: 'yellow_ring', h: 40 }
         ]);
     }
     curX += 7600;
@@ -94,7 +93,7 @@ function buildCalculatedLevel(sim) {
     for (let i = 0; i < 10; i++) {
         let isTop = (i % 2 === 0);
         sim.addSection(curX + i * 850, [
-            { x: 0, y: isTop ? 320 : 0, type: 'block', w: 250, h: 180 },
+            { x: 0, y: isTop ? 420 : 0, type: 'block', w: 120, h: 100 },
             { x: 500, y: isTop ? 0 : 550, type: 'spike' }
         ]);
     }
@@ -104,11 +103,11 @@ function buildCalculatedLevel(sim) {
     sim.transitions.push({ x: curX, mode: MODES.CUBE });
     curX += 1000;
     sim.addSection(curX, [
-        { x: 300, y: 0, type: 'pad' },
-        { x: 800, y: 0, type: 'pad' },
-        { x: 1300, y: 0, type: 'pad' },
-        { x: 1700, y: 200, type: 'ring', h: 40 },
-        { x: 2100, y: 200, type: 'ring', h: 40 },
+        { x: 300, y: 0, type: 'yellow_pad' },
+        { x: 800, y: 0, type: 'yellow_pad' },
+        { x: 1300, y: 0, type: 'yellow_pad' },
+        { x: 1700, y: 200, type: 'yellow_ring', h: 40 },
+        { x: 2100, y: 200, type: 'yellow_ring', h: 40 },
         { x: 2500, y: 0, type: 'spike' },
         { x: 2900, y: 0, type: 'spike' },
     ]);
@@ -127,7 +126,7 @@ function runFullSolver() {
     console.log(`Running Beam Search over Level (Max obstacle dist: ${maxDist})...`);
 
     let beam = [{ sim: sim, inputs: [] }];
-    const BEAM_WIDTH = 120;
+    const BEAM_WIDTH = 240;
 
     let frame = 0;
     while (beam.length > 0 && frame < 15000) {
@@ -154,7 +153,7 @@ function runFullSolver() {
         candidates.forEach(c => {
             c.score = c.sim.gameDistance * 10;
             if (c.sim.player.mode === MODES.SHIP || c.sim.player.mode === MODES.WAVE) {
-                c.score -= Math.abs(c.sim.player.y - 350) * 0.2;
+                c.score -= Math.abs(c.sim.player.y - 250) * 0.02;
             }
         });
 
