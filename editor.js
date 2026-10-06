@@ -11,7 +11,7 @@ const tCtx = timelineCanvas ? timelineCanvas.getContext('2d') : null;
 
 // Grid Constants
 const GRID_SIZE = 40;
-const PORTAL_COLORS = {
+const PORTAL_COLORS_EDITOR = (Physics && Physics.PORTAL_COLORS) ? Physics.PORTAL_COLORS : {
     cube: '#00ff66',
     ship: '#ff00aa',
     ball: '#ff2200',
@@ -1012,7 +1012,7 @@ function renderGridAndLevel(cam) {
             ctx.textBaseline = 'middle';
             ctx.fillText('$', screen.x + w / 2, screen.y + h / 2);
         } else if (obs.type === 'portal') {
-            const portalColor = PORTAL_COLORS[obs.mode] || '#ffffff';
+            const portalColor = PORTAL_COLORS_EDITOR[obs.mode] || '#ffffff';
             ctx.fillStyle = portalColor;
             ctx.globalAlpha = 0.25;
             ctx.fillRect(screen.x, screen.y, w, h);

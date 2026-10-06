@@ -12,18 +12,18 @@ resize();
 // Constants
 const GROUND_HEIGHT = 100;
 const CEILING_HEIGHT = 100;
-const PLAYER_SIZE = 40;
 let currentSpeed = 10.5;
 
-const MODES = {
+// Use shared constants from PhysicsEngine if loaded, otherwise fallback
+const PLAYER_SIZE_GAME = typeof PhysicsEngine !== 'undefined' ? PhysicsEngine.PLAYER_SIZE : 40;
+const MODES_GAME = typeof PhysicsEngine !== 'undefined' ? PhysicsEngine.MODES : {
     CUBE: 'cube',
     SHIP: 'ship',
     BALL: 'ball',
     UFO: 'ufo',
     WAVE: 'wave'
 };
-
-const PORTAL_COLORS = {
+const PORTAL_COLORS_GAME = typeof PhysicsEngine !== 'undefined' ? PhysicsEngine.PORTAL_COLORS : {
     cube: '#00ff66',
     ship: '#ff00aa',
     ball: '#ff2200',
@@ -511,7 +511,7 @@ function handleBotSolver() {
         }
     }
 
-    if (player.mode === MODES.SHIP || player.mode === MODES.WAVE) {
+    if (player.mode === MODES_GAME.SHIP || player.mode === MODES_GAME.WAVE) {
         if (player.y < 80) shouldJump = true;
         if (player.y > 300) shouldJump = false;
     }
@@ -615,7 +615,7 @@ function drawPlayerShape(mode, width, height, color, secondaryColor) {
     ctx.shadowBlur = 12;
 
     switch (mode) {
-        case MODES.CUBE:
+        case MODES_GAME.CUBE:
             ctx.fillRect(-halfW, -halfH, width, height);
             ctx.strokeRect(-halfW, -halfH, width, height);
             ctx.fillStyle = '#000000';
@@ -624,7 +624,7 @@ function drawPlayerShape(mode, width, height, color, secondaryColor) {
             ctx.fillRect(-6, 4, 12, 3);
             break;
 
-        case MODES.SHIP:
+        case MODES_GAME.SHIP:
             ctx.beginPath();
             ctx.moveTo(halfW, 0);
             ctx.lineTo(-halfW, -halfH);
@@ -640,7 +640,7 @@ function drawPlayerShape(mode, width, height, color, secondaryColor) {
             ctx.fill();
             break;
 
-        case MODES.BALL:
+        case MODES_GAME.BALL:
             ctx.beginPath();
             ctx.arc(0, 0, halfW, 0, Math.PI * 2);
             ctx.fill();
@@ -717,7 +717,7 @@ function draw() {
                     ctx.closePath();
                     ctx.fill();
                 } else if (obs.type === 'portal') {
-                    const portalColor = PORTAL_COLORS[obs.mode] || '#ffffff';
+                    const portalColor = PORTAL_COLORS_GAME[obs.mode] || '#ffffff';
                     ctx.fillStyle = portalColor;
                     ctx.globalAlpha = 0.25;
                     ctx.fillRect(screenX, screenY, obsW, obsH);
