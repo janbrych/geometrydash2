@@ -22,13 +22,13 @@ function runTestSuite() {
         copy.transitions = s.transitions;
         copy.gameDistance = s.gameDistance;
         copy.jumpPressed = s.jumpPressed;
-        copy.jumpProcessed = s.jumpProcessed;
+        copy.jumpProcessedState = { value: s.jumpProcessedState.value };
         copy.dead = s.dead;
         return copy;
     }
 
     let beam = [{ sim: sim, inputs: [] }];
-    const BEAM_WIDTH = 120;
+    const BEAM_WIDTH = 240;
     let frame = 0;
 
     while (beam.length > 0 && frame < 15000) {
@@ -55,7 +55,7 @@ function runTestSuite() {
         candidates.forEach(c => {
             c.score = c.sim.gameDistance * 10;
             if (c.sim.player.mode === MODES.SHIP || c.sim.player.mode === MODES.WAVE) {
-                c.score -= Math.abs(c.sim.player.y - 350) * 0.2;
+                c.score -= Math.abs(c.sim.player.y - 250) * 0.02;
             }
         });
 
@@ -64,7 +64,7 @@ function runTestSuite() {
         let map = new Map();
         let uniqueCandidates = [];
         for (let c of candidates) {
-            let key = `${c.sim.gameDistance.toFixed(0)}_${c.sim.player.mode}_${c.sim.player.y.toFixed(0)}_${c.sim.player.velocityY.toFixed(0)}_${c.sim.player.isGrounded}_${c.sim.jumpPressed}_${c.sim.gravityDir}`;
+            let key = `${c.sim.gameDistance.toFixed(0)}_${c.sim.player.mode}_${c.sim.player.y.toFixed(0)}_${c.sim.player.velocityY.toFixed(0)}_${c.sim.player.isGrounded}_${c.sim.jumpPressed}_${c.sim.player.gravityDir}`;
             if (!map.has(key)) {
                 map.set(key, true);
                 uniqueCandidates.push(c);
