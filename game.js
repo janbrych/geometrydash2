@@ -1020,6 +1020,7 @@ function update() {
         if (player.jumpBufferCounter > 0 && player.coyoteCounter > 0) {
             player.velocityY = JUMP_FORCE;
             player.isGrounded = false;
+            player.coyoteCounter = 0;
             player.jumpBufferCounter = 0;
             createSparks(player.x, player.y + player.height);
         }
