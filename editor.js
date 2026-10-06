@@ -287,22 +287,25 @@ function handleCanvasClick(e) {
 
     // Convert Y relative to floor
     const relativeY = groundY - world.y;
-    const gridX = snapToGrid(world.x);
-    const gridY = snapToGrid(relativeY);
+    const gridX = Math.max(0, snapToGrid(world.x));
+    let gridY = snapToGrid(relativeY);
 
-    if (gridX < 0) return;
+    if (selectedObjectType === 'spike_ceiling') {
+        gridY = groundY - CEILING_HEIGHT - 40;
+    }
 
     if (currentTool === 'erase') {
-        // Remove object at grid location
+        // Remove object at grid location or near mouse click
         currentLevel.obstacles = currentLevel.obstacles.filter(obs => {
-            return !(Math.abs(obs.x - gridX) < 10 && Math.abs(obs.y - gridY) < 10);
+            const isAtGrid = Math.abs(obs.x - gridX) < 20 && Math.abs(obs.y - gridY) < 20;
+            return !isAtGrid;
         });
         objectCountEl.textContent = currentLevel.obstacles.length;
         return;
     }
 
     if (currentTool === 'draw') {
-        // Check if object already exists at location
+        // Check if object already exists at exact location
         const exists = currentLevel.obstacles.some(obs => Math.abs(obs.x - gridX) < 10 && Math.abs(obs.y - gridY) < 10);
         if (exists) return;
 
@@ -317,10 +320,9 @@ function handleCanvasClick(e) {
         if (selectedObjectType === 'spike_ceiling') {
             newObj.type = 'spike';
             newObj.ceiling = true;
-            newObj.y = canvas.height - GROUND_HEIGHT - CEILING_HEIGHT;
+            newObj.y = canvas.height - GROUND_HEIGHT - CEILING_HEIGHT - 40;
         } else if (selectedObjectType === 'yellow_pad' || selectedObjectType === 'magenta_pad') {
             newObj.h = 10;
-            newObj.y = 0;
         } else if (selectedObjectType === 'yellow_ring' || selectedObjectType === 'magenta_ring' || selectedObjectType === 'coin') {
             newObj.w = 30;
             newObj.h = 30;

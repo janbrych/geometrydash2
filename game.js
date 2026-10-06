@@ -140,46 +140,8 @@ const SKINS = [
     }
 ];
 
-// Level Configurations
-const LEVEL_CONFIGS = [
-    {
-        id: 0,
-        title: 'CYBER RAVE',
-        difficulty: 'INSANE',
-        speed: 9.0,
-        audioSrc: 'techno_level1.wav',
-        playerColor: '#00ffff',
-        bgHueOffset: 180,
-        initialMode: MODES.CUBE,
-        builder: buildLevel1
-    },
-    {
-        id: 1,
-        title: 'ACID DISTRICT',
-        difficulty: 'DEMON',
-        speed: 10.5,
-        audioSrc: 'techno_level2.wav',
-        playerColor: '#aaff00',
-        bgHueOffset: 80,
-        initialMode: MODES.BALL,
-        builder: buildLevel2
-    },
-    {
-        id: 2,
-        title: 'INDUSTRIAL HELL',
-        difficulty: 'EXTREME DEMON',
-        speed: 12.0,
-        audioSrc: 'techno_level3.wav',
-        playerColor: '#ff2255',
-        bgHueOffset: 340,
-        initialMode: MODES.WAVE,
-        builder: buildLevel3
-    }
-];
-
-let currentLevelIdx = 0;
-let customLevelData = null;
-let levelBestScores = [0, 0, 0];
+let currentActiveLevel = null;
+let levelBestScores = {};
 
 // Economy & Unlock Storage
 let userCoins = parseInt(localStorage.getItem('gd_coins') || '0', 10);
@@ -188,7 +150,7 @@ let equippedSkinId = localStorage.getItem('gd_equipped_skin') || 'default_cyan';
 let isDarkTheme = localStorage.getItem('gd_theme') !== 'light';
 
 // Audio setup
-let bgMusic = new Audio(LEVEL_CONFIGS[0].audioSrc);
+let bgMusic = new Audio('techno_level1.wav');
 bgMusic.loop = true;
 bgMusic.volume = 0.6;
 
@@ -294,20 +256,79 @@ function initUI() {
         closeShop();
     });
 
-    // Community Modal Listeners
     const openCommBtn = document.getElementById('openCommunityBtn');
     const closeCommBtn = document.getElementById('closeCommunityBtn');
     if (openCommBtn) openCommBtn.addEventListener('click', openCommunityModal);
     if (closeCommBtn) closeCommBtn.addEventListener('click', closeCommunityModal);
 
-    // Initial Best Scores
-    LEVEL_CONFIGS.forEach((cfg, idx) => {
-        let best = localStorage.getItem(`gd_best_level_${idx}`) || '0';
-        levelBestScores[idx] = parseInt(best, 10);
-        updateLevelProgressUI(idx, levelBestScores[idx]);
+    renderLobbyLevels();
+    renderSkinShopGrid();
+}
+
+function renderLobbyLevels() {
+    const container = document.getElementById('lobbyLevelCards');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const levels = typeof LevelDB !== 'undefined' ? LevelDB.getAllLevels() : [];
+
+    if (levels.length === 0) {
+        container.innerHTML = `<div style="color: #64748b; text-align: center; padding: 20px;">Žádné vytvořené levely. Klikněte na [LEVEL EDITOR] a vytvořte svůj první level!</div>`;
+        return;
+    }
+
+    // Sort: Main levels first, then by date created
+    levels.sort((a, b) => {
+        if (a.isMain && !b.isMain) return -1;
+        if (!a.isMain && b.isMain) return 1;
+        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
     });
 
-    renderSkinShopGrid();
+    levels.forEach(lvl => {
+        const best = parseInt(localStorage.getItem(`gd_best_${lvl.id}`) || '0', 10);
+        levelBestScores[lvl.id] = best;
+
+        const card = document.createElement('div');
+        card.className = `level-card ${lvl.isMain ? 'main-level-card' : ''}`;
+
+        card.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <div class="level-badge ${lvl.isMain ? 'badge-cyber' : 'badge-acid'}">
+                    ${lvl.isMain ? '⭐ MAIN TRACK' : 'COMMUNITY TRACK'} • ${lvl.speed || 10.5}x SPEED
+                </div>
+                <button class="btn-toggle-main" style="background: none; border: none; font-size: 1.1rem; cursor: pointer;" title="Toggle Main Status">
+                    ${lvl.isMain ? '⭐' : '☆'}
+                </button>
+            </div>
+            <h3 style="margin-top: 4px;">${lvl.title.toUpperCase()}</h3>
+            <div class="level-info">Autor: ${lvl.author || 'Player'} • Objekty: ${lvl.obstacles ? lvl.obstacles.length : 0}</div>
+            <div class="mode-sequence">START MODE: ${(lvl.initialMode || 'CUBE').toUpperCase()}</div>
+            <div class="level-progress-bg"><div class="level-progress-fill" style="width: ${best}%;"></div></div>
+            <div class="card-footer-row">
+                <span class="level-best">Best: ${best}%</span>
+                <button class="btn-card-play">PLAY</button>
+            </div>
+        `;
+
+        card.querySelector('.btn-card-play').addEventListener('click', (e) => {
+            e.stopPropagation();
+            startLevel(lvl);
+        });
+
+        card.querySelector('.btn-toggle-main').addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (typeof LevelDB !== 'undefined') {
+                LevelDB.toggleMainLevel(lvl.id);
+                renderLobbyLevels();
+            }
+        });
+
+        card.addEventListener('click', () => {
+            startLevel(lvl);
+        });
+
+        container.appendChild(card);
+    });
 }
 
 function updateThemeUI() {
@@ -448,16 +469,13 @@ function updatePreviewBadge() {
     if (desc) desc.textContent = skin.desc;
 }
 
-// Select level from lobby
-function selectLevel(idx) {
+function startLevel(levelData) {
     blurActiveElement();
-    currentLevelIdx = idx;
-    customLevelData = null;
-    const config = LEVEL_CONFIGS[currentLevelIdx];
-    currentSpeed = config.speed;
+    currentActiveLevel = levelData;
+    currentSpeed = levelData.speed || 10.5;
 
     bgMusic.pause();
-    bgMusic = new Audio(config.audioSrc);
+    bgMusic = new Audio(levelData.music || 'techno_level1.wav');
     bgMusic.loop = true;
     bgMusic.volume = 0.6;
 
@@ -470,20 +488,7 @@ function selectLevel(idx) {
 }
 
 function selectCommunityLevel(levelData) {
-    customLevelData = levelData;
-    currentSpeed = levelData.speed || 10.5;
-
-    bgMusic.pause();
-    bgMusic = new Audio(levelData.music || 'techno_level2.wav');
-    bgMusic.loop = true;
-    bgMusic.volume = 0.6;
-
-    document.getElementById('lobbyOverlay').classList.add('hidden');
-    document.getElementById('hudOverlay').classList.remove('hidden');
-
-    resetGame();
-    gameState = 'PLAYING';
-    bgMusic.play().catch(() => {});
+    startLevel(levelData);
 }
 
 function returnToLobby() {
@@ -493,17 +498,18 @@ function returnToLobby() {
     document.getElementById('lobbyOverlay').classList.remove('hidden');
     document.getElementById('hudOverlay').classList.add('hidden');
     updateCoinDisplays();
+    renderLobbyLevels();
 }
 
 function resetGame() {
-    if (customLevelData) {
-        currentSpeed = customLevelData.speed || 10.5;
-        player.mode = customLevelData.initialMode || MODES.CUBE;
-        totalLevelLength = customLevelData.totalLength || 20000;
+    if (currentActiveLevel) {
+        currentSpeed = currentActiveLevel.speed || 10.5;
+        player.mode = currentActiveLevel.initialMode || MODES.CUBE;
+        totalLevelLength = currentActiveLevel.totalLength || 20000;
     } else {
-        const config = LEVEL_CONFIGS[currentLevelIdx];
-        currentSpeed = config.speed;
-        player.mode = config.initialMode;
+        currentSpeed = 10.5;
+        player.mode = MODES.CUBE;
+        totalLevelLength = 20000;
     }
 
     player.x = 150;
@@ -525,10 +531,8 @@ function resetGame() {
     levelCoinsCollectedInRun = 0;
     updateCoinDisplays();
 
-    if (customLevelData) {
-        buildCustomLevel(customLevelData);
-    } else {
-        LEVEL_CONFIGS[currentLevelIdx].builder();
+    if (currentActiveLevel) {
+        buildCustomLevel(currentActiveLevel);
     }
 }
 
@@ -1132,10 +1136,12 @@ function update() {
 
     // Progress % calculation
     let currentProgress = Math.min(100, Math.floor((gameDistance / totalLevelLength) * 100));
-    if (!customLevelData && currentProgress > levelBestScores[currentLevelIdx]) {
-        levelBestScores[currentLevelIdx] = currentProgress;
-        localStorage.setItem(`gd_best_level_${currentLevelIdx}`, currentProgress.toString());
-        updateLevelProgressUI(currentLevelIdx, currentProgress);
+    if (currentActiveLevel) {
+        const lvlId = currentActiveLevel.id;
+        if (!levelBestScores[lvlId] || currentProgress > levelBestScores[lvlId]) {
+            levelBestScores[lvlId] = currentProgress;
+            localStorage.setItem(`gd_best_${lvlId}`, currentProgress.toString());
+        }
     }
 
     if (gameDistance >= totalLevelLength) {
@@ -1272,8 +1278,7 @@ function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Dynamic Visual Background
-    const config = LEVEL_CONFIGS[currentLevelIdx] || LEVEL_CONFIGS[0];
-    const hue = (gameDistance / 10 + config.bgHueOffset) % 360;
+    const hue = (gameDistance / 10 + 180) % 360;
     ctx.fillStyle = `hsl(${hue}, 40%, 8%)`;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
