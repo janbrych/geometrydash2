@@ -105,7 +105,11 @@
 
     <!-- In-Game Pause / HUD Overlay -->
     <div id="hudOverlay" class="hud-container hidden">
-        <button id="lobbyReturnBtn" class="btn-lobby-return" onclick="returnToLobby()">🏠 Lobby</button>
+        <div class="hud-left-group">
+            <button id="lobbyReturnBtn" class="btn-hud" onclick="returnToLobby()">🏠 Lobby</button>
+            <button id="pauseToggleBtn" class="btn-hud" onclick="togglePause()">⏸️ Pause</button>
+            <button id="restartBtn" class="btn-hud" onclick="restartLevel()">🔄 Restart</button>
+        </div>
         <div class="in-game-coins">
             <span class="coin-icon">🪙</span>
             <span id="hudCoinCount">0</span>

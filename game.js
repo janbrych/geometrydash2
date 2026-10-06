@@ -155,7 +155,7 @@ bgMusic.loop = true;
 bgMusic.volume = 0.6;
 
 // Game State
-let gameState = 'LOBBY'; // LOBBY, PLAYING, DEAD
+let gameState = 'LOBBY'; // LOBBY, PLAYING, PAUSED, DEAD
 let attempts = 1;
 let botMode = false; // BOT for testing
 
@@ -205,6 +205,8 @@ window.addEventListener('keydown', (e) => {
         }
     } else if (e.code === 'KeyB') {
         botMode = !botMode;
+    } else if (e.code === 'KeyP') {
+        togglePause();
     } else if (e.code === 'Escape') {
         returnToLobby();
     }
@@ -212,11 +214,13 @@ window.addEventListener('keydown', (e) => {
 window.addEventListener('keyup', (e) => {
     if (e.code === 'Space' || e.code === 'ArrowUp') {
         e.preventDefault();
-        if (player.mode === MODES.CUBE && player.velocityY < -3) {
-            player.velocityY *= 0.5;
+        if (gameState === 'PLAYING') {
+            if (player.mode === MODES.CUBE && player.velocityY < -3) {
+                player.velocityY *= 0.5;
+            }
+            jumpPressed = false;
+            jumpProcessed = false;
         }
-        jumpPressed = false;
-        jumpProcessed = false;
     }
 });
 
@@ -228,11 +232,13 @@ window.addEventListener('mousedown', (e) => {
     }
 });
 window.addEventListener('mouseup', () => {
-    if (player.mode === MODES.CUBE && player.velocityY < -3) {
-        player.velocityY *= 0.5;
+    if (gameState === 'PLAYING') {
+        if (player.mode === MODES.CUBE && player.velocityY < -3) {
+            player.velocityY *= 0.5;
+        }
+        jumpPressed = false;
+        jumpProcessed = false;
     }
-    jumpPressed = false;
-    jumpProcessed = false;
 });
 
 // UI Event Handling Setup
@@ -491,10 +497,37 @@ function selectCommunityLevel(levelData) {
     startLevel(levelData);
 }
 
+function togglePause() {
+    blurActiveElement();
+    if (gameState === 'PLAYING') {
+        gameState = 'PAUSED';
+        bgMusic.pause();
+        const pauseBtn = document.getElementById('pauseToggleBtn');
+        if (pauseBtn) pauseBtn.textContent = '▶️ Resume';
+    } else if (gameState === 'PAUSED') {
+        gameState = 'PLAYING';
+        bgMusic.play().catch(() => {});
+        const pauseBtn = document.getElementById('pauseToggleBtn');
+        if (pauseBtn) pauseBtn.textContent = '⏸️ Pause';
+    }
+}
+
+function restartLevel() {
+    blurActiveElement();
+    const pauseBtn = document.getElementById('pauseToggleBtn');
+    if (pauseBtn) pauseBtn.textContent = '⏸️ Pause';
+    resetGame();
+    gameState = 'PLAYING';
+    bgMusic.currentTime = 0;
+    bgMusic.play().catch(() => {});
+}
+
 function returnToLobby() {
     blurActiveElement();
     bgMusic.pause();
     gameState = 'LOBBY';
+    const pauseBtn = document.getElementById('pauseToggleBtn');
+    if (pauseBtn) pauseBtn.textContent = '⏸️ Pause';
     document.getElementById('lobbyOverlay').classList.remove('hidden');
     document.getElementById('hudOverlay').classList.add('hidden');
     updateCoinDisplays();
@@ -1400,6 +1433,27 @@ function draw() {
         ctx.restore();
 
         transitionBannerTimer--;
+    }
+
+    // Render PAUSED Banner Overlay
+    if (gameState === 'PAUSED') {
+        ctx.save();
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = '#00f0ff';
+        ctx.shadowColor = '#00f0ff';
+        ctx.shadowBlur = 20;
+        ctx.font = '900 48px Outfit';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2 - 20);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowBlur = 0;
+        ctx.font = '600 18px Outfit';
+        ctx.fillText('Press [P] or click Resume to continue', canvas.width / 2, canvas.height / 2 + 30);
+        ctx.restore();
     }
 }
 
