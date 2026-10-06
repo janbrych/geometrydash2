@@ -215,9 +215,6 @@ window.addEventListener('keyup', (e) => {
     if (e.code === 'Space' || e.code === 'ArrowUp') {
         e.preventDefault();
         if (gameState === 'PLAYING') {
-            if (player.mode === MODES.CUBE && player.velocityY < -3) {
-                player.velocityY *= 0.5;
-            }
             jumpPressed = false;
             jumpProcessed = false;
         }
@@ -233,9 +230,6 @@ window.addEventListener('mousedown', (e) => {
 });
 window.addEventListener('mouseup', () => {
     if (gameState === 'PLAYING') {
-        if (player.mode === MODES.CUBE && player.velocityY < -3) {
-            player.velocityY *= 0.5;
-        }
         jumpPressed = false;
         jumpProcessed = false;
     }
