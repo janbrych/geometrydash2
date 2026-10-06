@@ -197,9 +197,15 @@ function blurActiveElement() {
     }
 }
 
+// Global focus removal on click so buttons never retain focus and re-trigger on Space key
+document.addEventListener('click', (e) => {
+    blurActiveElement();
+});
+
 window.addEventListener('keydown', (e) => {
     if (e.code === 'Space' || e.code === 'ArrowUp') {
         e.preventDefault();
+        blurActiveElement();
         if (gameState === 'PLAYING') {
             jumpPressed = true;
         }
