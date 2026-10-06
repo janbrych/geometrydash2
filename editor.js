@@ -290,18 +290,18 @@ function handleCanvasClick(e) {
     const gridX = Math.max(0, snapToGrid(world.x));
     let gridY = snapToGrid(relativeY);
 
-    if (selectedObjectType === 'spike_ceiling') {
-        gridY = groundY - CEILING_HEIGHT - 40;
-    }
-
     if (currentTool === 'erase') {
         // Remove object at grid location or near mouse click
         currentLevel.obstacles = currentLevel.obstacles.filter(obs => {
-            const isAtGrid = Math.abs(obs.x - gridX) < 20 && Math.abs(obs.y - gridY) < 20;
+            const isAtGrid = Math.abs(obs.x - gridX) < 20 && Math.abs(obs.y - gridY) < 25;
             return !isAtGrid;
         });
         objectCountEl.textContent = currentLevel.obstacles.length;
         return;
+    }
+
+    if (selectedObjectType === 'spike_ceiling') {
+        gridY = groundY - CEILING_HEIGHT - 40;
     }
 
     if (currentTool === 'draw') {
