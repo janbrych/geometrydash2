@@ -12,24 +12,7 @@ resize();
 // Constants
 const GROUND_HEIGHT = 100;
 const CEILING_HEIGHT = 100;
-const PLAYER_SIZE = 40;
 let currentSpeed = 10.5;
-
-const MODES = {
-    CUBE: 'cube',
-    SHIP: 'ship',
-    BALL: 'ball',
-    UFO: 'ufo',
-    WAVE: 'wave'
-};
-
-const PORTAL_COLORS = {
-    cube: '#00ff66',
-    ship: '#ff00aa',
-    ball: '#ff2200',
-    ufo: '#ff9900',
-    wave: '#0099ff'
-};
 
 // 10+ Skins Definition
 const SKINS = [
@@ -511,7 +494,8 @@ function handleBotSolver() {
         }
     }
 
-    if (player.mode === MODES.SHIP || player.mode === MODES.WAVE) {
+    const modes = PhysicsEngine.MODES;
+    if (player.mode === modes.SHIP || player.mode === modes.WAVE) {
         if (player.y < 80) shouldJump = true;
         if (player.y > 300) shouldJump = false;
     }
@@ -607,6 +591,7 @@ function handleDeath() {
 function drawPlayerShape(mode, width, height, color, secondaryColor) {
     const halfW = width / 2;
     const halfH = height / 2;
+    const modes = PhysicsEngine.MODES;
 
     ctx.fillStyle = color;
     ctx.strokeStyle = secondaryColor;
@@ -615,7 +600,7 @@ function drawPlayerShape(mode, width, height, color, secondaryColor) {
     ctx.shadowBlur = 12;
 
     switch (mode) {
-        case MODES.CUBE:
+        case modes.CUBE:
             ctx.fillRect(-halfW, -halfH, width, height);
             ctx.strokeRect(-halfW, -halfH, width, height);
             ctx.fillStyle = '#000000';
@@ -624,7 +609,7 @@ function drawPlayerShape(mode, width, height, color, secondaryColor) {
             ctx.fillRect(-6, 4, 12, 3);
             break;
 
-        case MODES.SHIP:
+        case modes.SHIP:
             ctx.beginPath();
             ctx.moveTo(halfW, 0);
             ctx.lineTo(-halfW, -halfH);
@@ -640,7 +625,7 @@ function drawPlayerShape(mode, width, height, color, secondaryColor) {
             ctx.fill();
             break;
 
-        case MODES.BALL:
+        case modes.BALL:
             ctx.beginPath();
             ctx.arc(0, 0, halfW, 0, Math.PI * 2);
             ctx.fill();
@@ -717,7 +702,8 @@ function draw() {
                     ctx.closePath();
                     ctx.fill();
                 } else if (obs.type === 'portal') {
-                    const portalColor = PORTAL_COLORS[obs.mode] || '#ffffff';
+                    const portalColors = PhysicsEngine.PORTAL_COLORS || {};
+                    const portalColor = portalColors[obs.mode] || '#ffffff';
                     ctx.fillStyle = portalColor;
                     ctx.globalAlpha = 0.25;
                     ctx.fillRect(screenX, screenY, obsW, obsH);
