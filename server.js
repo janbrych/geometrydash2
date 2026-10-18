@@ -90,9 +90,14 @@ app.get('/api/music/resolve', async (req, res) => {
         console.error('Music resolution error:', err.message);
         // Clean fallback response
         return res.json({
-            success: false,
-            fallbackAudioUrl: 'techno_level1.wav',
-            error: 'Could not resolve track metadata. Using fallback track.'
+            success: true,
+            type: 'fallback',
+            title: 'Custom Audio Stream',
+            artist: 'Matched Track',
+            thumbnail: '',
+            audioUrl: 'techno_level1.wav',
+            bpm: 120,
+            message: 'Could not resolve online metadata. Using fallback techno track.'
         });
     }
 });
