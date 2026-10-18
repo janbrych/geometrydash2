@@ -630,6 +630,49 @@ function drawPlayerShape(mode, width, height, color, secondaryColor) {
             ctx.arc(0, 0, halfW, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(-halfW, 0); ctx.lineTo(halfW, 0);
+            ctx.moveTo(0, -halfH); ctx.lineTo(0, halfH);
+            ctx.stroke();
+            break;
+
+        case modes.UFO:
+            // Saucer body
+            ctx.beginPath();
+            ctx.ellipse(0, 4, halfW, halfH * 0.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // Dome canopy
+            ctx.beginPath();
+            ctx.arc(0, -2, halfW * 0.55, Math.PI, 0);
+            ctx.fillStyle = 'rgba(0, 240, 255, 0.7)';
+            ctx.fill();
+            ctx.stroke();
+            // Center glowing core
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(0, 4, 5, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+
+        case modes.WAVE:
+            // Sharp triangle dart
+            ctx.beginPath();
+            ctx.moveTo(halfW, 0);
+            ctx.lineTo(-halfW, -halfH);
+            ctx.lineTo(-halfW + 8, 0);
+            ctx.lineTo(-halfW, halfH);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            // Inner core streak
+            ctx.beginPath();
+            ctx.moveTo(halfW * 0.4, 0);
+            ctx.lineTo(-halfW * 0.4, -halfH * 0.4);
+            ctx.lineTo(-halfW * 0.4, halfH * 0.4);
+            ctx.closePath();
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
             break;
 
         default:
