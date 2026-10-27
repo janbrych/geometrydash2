@@ -90,9 +90,13 @@ app.get('/api/music/resolve', async (req, res) => {
         console.error('Music resolution error:', err.message);
         // Clean fallback response
         return res.json({
-            success: false,
+            success: true,
+            title: 'Fallback Track',
+            artist: 'Default Loop',
+            audioUrl: 'techno_level1.wav',
             fallbackAudioUrl: 'techno_level1.wav',
-            error: 'Could not resolve track metadata. Using fallback track.'
+            bpm: 120,
+            message: 'Could not resolve track metadata. Using fallback track.'
         });
     }
 });
